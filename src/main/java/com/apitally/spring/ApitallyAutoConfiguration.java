@@ -21,9 +21,10 @@ public class ApitallyAutoConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<ApitallyFilter> filterRegistration(ApitallyProperties properties) {
+    public FilterRegistrationBean<ApitallyFilter> filterRegistration(ApitallyProperties properties,
+            ApitallyClient apitallyClient) {
         final FilterRegistrationBean<ApitallyFilter> registrationBean = new FilterRegistrationBean<>();
-        registrationBean.setFilter(new ApitallyFilter());
+        registrationBean.setFilter(new ApitallyFilter(apitallyClient));
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE - 10); // Similar to HttpTraceFilter
         return registrationBean;
     }

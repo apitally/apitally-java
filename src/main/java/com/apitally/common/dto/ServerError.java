@@ -12,16 +12,16 @@ public class ServerError {
     private final String path;
     private final String type;
     private final String message;
-    private final String stacktrace;
+    private final String stackTrace;
 
     public ServerError(String consumer, String method, String path, String type, String message,
-            String stacktrace) {
+            StackTraceElement[] stackTrace) {
         this.consumer = consumer;
         this.method = method;
         this.path = path;
         this.type = type;
         this.message = truncateMessage(message);
-        this.stacktrace = truncateStacktrace(stacktrace);
+        this.stackTrace = truncateStackTrace(stackTrace);
     }
 
     public String getConsumer() {
@@ -44,8 +44,8 @@ public class ServerError {
         return message;
     }
 
-    public String getStacktrace() {
-        return stacktrace;
+    public String getStackTrace() {
+        return stackTrace;
     }
 
     private String truncateMessage(String msg) {
@@ -58,13 +58,13 @@ public class ServerError {
         return msg.substring(0, cutoff) + suffix;
     }
 
-    private String truncateStacktrace(String stacktrace) {
+    private String truncateStackTrace(StackTraceElement[] stackTrace) {
         String suffix = "... (truncated) ...";
         int cutoff = MAX_STACKTRACE_LENGTH - suffix.length();
-        String[] lines = stacktrace.trim().split("\n");
         List<String> truncatedLines = new ArrayList<>();
         int length = 0;
-        for (String line : lines) {
+        for (StackTraceElement element : stackTrace) {
+            String line = element.toString().trim();
             if (length + line.length() + 1 > cutoff) {
                 truncatedLines.add(suffix);
                 break;

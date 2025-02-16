@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.apitally.common.dto.Request;
 import com.apitally.common.dto.RequestsItem;
 
 public class RequestCounter {
@@ -25,16 +24,13 @@ public class RequestCounter {
         this.responseSizes = new HashMap<>();
     }
 
-    private String getKey(Request requestInfo) {
-        return String.join("|",
-                requestInfo.getConsumer() != null ? requestInfo.getConsumer() : "",
-                requestInfo.getMethod().toUpperCase(),
-                requestInfo.getPath(),
-                String.valueOf(requestInfo.getStatusCode()));
-    }
-
-    public void addRequest(Request requestInfo) {
-        String key = getKey(requestInfo);
+    public void addRequest(String consumer, String method, String path, int statusCode, long responseTime,
+            long requestSize, long responseSize) {
+        String key = String.join("|",
+                consumer,
+                method.toUpperCase(),
+                path,
+                String.valueOf(statusCode));
 
         // Increment request count
         requestCounts.merge(key, 1, Integer::sum);
@@ -42,12 +38,11 @@ public class RequestCounter {
         // Add response time (rounded to nearest 10ms)
         responseTimes.computeIfAbsent(key, k -> new HashMap<>());
         Map<Integer, Integer> responseTimeMap = responseTimes.get(key);
-        int responseTimeMsBin = (int) (Math.floor(requestInfo.getResponseTime() / 10.0) * 10);
+        int responseTimeMsBin = (int) (Math.floor(responseTime / 10.0) * 10);
         responseTimeMap.merge(responseTimeMsBin, 1, Integer::sum);
 
         // Add request size (rounded down to nearest KB)
-        if (requestInfo.getRequestSize() != null) {
-            long requestSize = Long.parseLong(String.valueOf(requestInfo.getRequestSize()));
+        if (requestSize >= 0) {
             requestSizeSums.merge(key, requestSize, Long::sum);
             requestSizes.computeIfAbsent(key, k -> new HashMap<>());
             Map<Integer, Integer> requestSizeMap = requestSizes.get(key);
@@ -56,8 +51,7 @@ public class RequestCounter {
         }
 
         // Add response size (rounded down to nearest KB)
-        if (requestInfo.getResponseSize() != null) {
-            long responseSize = Long.parseLong(String.valueOf(requestInfo.getResponseSize()));
+        if (responseSize >= 0) {
             responseSizeSums.merge(key, responseSize, Long::sum);
             responseSizes.computeIfAbsent(key, k -> new HashMap<>());
             Map<Integer, Integer> responseSizeMap = responseSizes.get(key);

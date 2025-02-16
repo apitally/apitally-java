@@ -20,9 +20,9 @@ public class ServerErrorCounter {
         this.errorDetails = new HashMap<>();
     }
 
-    public void addServerError(String consumer, String method, String path, String type, String message,
-            String traceback) {
-        ServerError error = new ServerError(consumer, method, path, type, message, traceback);
+    public void addServerError(String consumer, String method, String path, Exception exception) {
+        ServerError error = new ServerError(consumer, method, path, exception.getClass().getSimpleName(),
+                exception.getMessage(), exception.getStackTrace());
         String key = getKey(error);
         errorDetails.putIfAbsent(key, error);
         errorCounts.merge(key, 1, Integer::sum);
@@ -39,7 +39,7 @@ public class ServerErrorCounter {
                         error.getPath(),
                         error.getType(),
                         error.getMessage(),
-                        error.getStacktrace(),
+                        error.getStackTrace(),
                         count));
             }
         });
@@ -51,11 +51,11 @@ public class ServerErrorCounter {
     private String getKey(ServerError error) {
         String hashInput = String.join("|",
                 error.getConsumer() != null ? error.getConsumer() : "",
-                error.getMethod().toUpperCase(),
+                error.getMethod(),
                 error.getPath(),
                 error.getType(),
-                error.getMessage().trim(),
-                error.getStacktrace().trim());
+                error.getMessage(),
+                error.getStackTrace());
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(hashInput.getBytes());
