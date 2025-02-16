@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.apitally.common.dto.RequestInfo;
+import com.apitally.common.dto.Request;
 import com.apitally.common.dto.RequestsItem;
 
 public class RequestCounter {
@@ -25,7 +25,7 @@ public class RequestCounter {
         this.responseSizes = new HashMap<>();
     }
 
-    private String getKey(RequestInfo requestInfo) {
+    private String getKey(Request requestInfo) {
         return String.join("|",
                 requestInfo.getConsumer() != null ? requestInfo.getConsumer() : "",
                 requestInfo.getMethod().toUpperCase(),
@@ -33,7 +33,7 @@ public class RequestCounter {
                 String.valueOf(requestInfo.getStatusCode()));
     }
 
-    public void addRequest(RequestInfo requestInfo) {
+    public void addRequest(Request requestInfo) {
         String key = getKey(requestInfo);
 
         // Increment request count
