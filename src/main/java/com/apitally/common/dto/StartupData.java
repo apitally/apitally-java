@@ -15,7 +15,8 @@ public class StartupData {
     private final String client;
 
     @JsonCreator
-    public StartupData(@JsonProperty("instanceUuid") UUID instanceUuid,
+    public StartupData(
+            @JsonProperty("instance_uuid") UUID instanceUuid,
             @JsonProperty("paths") List<PathItem> paths,
             @JsonProperty("versions") Map<String, String> versions,
             @JsonProperty("client") String client) {
@@ -24,6 +25,16 @@ public class StartupData {
         this.paths = paths;
         this.versions = versions;
         this.client = client;
+    }
+
+    @JsonProperty("instance_uuid")
+    public UUID getInstanceUuid() {
+        return instanceUuid;
+    }
+
+    @JsonProperty("message_uuid")
+    public UUID getMessageUuid() {
+        return messageUuid;
     }
 
     public List<PathItem> getPaths() {
@@ -36,13 +47,5 @@ public class StartupData {
 
     public String getClient() {
         return client;
-    }
-
-    public UUID getInstanceUuid() {
-        return instanceUuid;
-    }
-
-    public UUID getMessageUuid() {
-        return messageUuid;
     }
 }
