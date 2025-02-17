@@ -1,19 +1,21 @@
 package com.apitally.spring;
 
+import java.io.IOException;
+
 import org.springframework.lang.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
 
 import com.apitally.common.ApitallyClient;
 import com.apitally.common.ConsumerRegistry;
 import com.apitally.common.dto.ApitallyConsumer;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 public class ApitallyFilter extends OncePerRequestFilter {
     private final ApitallyClient apitallyClient;

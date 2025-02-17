@@ -1,15 +1,15 @@
 package com.apitally.common;
 
-import com.apitally.common.dto.ServerError;
-import com.apitally.common.dto.ServerErrorsItem;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Map;
-import java.util.HexFormat;
+
+import com.apitally.common.dto.ServerError;
+import com.apitally.common.dto.ServerErrorsItem;
 
 public class ServerErrorCounter {
     private final Map<String, Integer> errorCounts;
@@ -55,7 +55,7 @@ public class ServerErrorCounter {
                 error.getPath(),
                 error.getType(),
                 error.getMessage(),
-                error.getStackTrace());
+                error.getStackTraceString());
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(hashInput.getBytes());

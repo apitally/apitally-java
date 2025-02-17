@@ -1,12 +1,11 @@
 package com.apitally.spring;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.core.Ordered;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 import com.apitally.common.ApitallyClient;
 
@@ -15,9 +14,8 @@ import com.apitally.common.ApitallyClient;
 @EnableConfigurationProperties(ApitallyProperties.class)
 public class ApitallyAutoConfiguration {
     @Bean
-    @ConditionalOnProperty(name = "apitally.client-id")
     public ApitallyClient apitallyClient(ApitallyProperties properties) {
-        return new ApitallyClient(properties.getClientId(), properties.getEnvironment());
+        return ApitallyClient.getInstance(properties.getClientId(), properties.getEnvironment());
     }
 
     @Bean

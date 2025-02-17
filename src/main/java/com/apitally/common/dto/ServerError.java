@@ -12,7 +12,8 @@ public class ServerError {
     private final String path;
     private final String type;
     private final String message;
-    private final String stackTrace;
+    private final StackTraceElement[] stackTrace;
+    private final String stackTraceString;
 
     public ServerError(String consumer, String method, String path, String type, String message,
             StackTraceElement[] stackTrace) {
@@ -21,7 +22,8 @@ public class ServerError {
         this.path = path;
         this.type = type;
         this.message = truncateMessage(message);
-        this.stackTrace = truncateStackTrace(stackTrace);
+        this.stackTrace = stackTrace;
+        this.stackTraceString = truncateStackTrace(stackTrace);
     }
 
     public String getConsumer() {
@@ -44,8 +46,12 @@ public class ServerError {
         return message;
     }
 
-    public String getStackTrace() {
+    public StackTraceElement[] getStackTrace() {
         return stackTrace;
+    }
+
+    public String getStackTraceString() {
+        return stackTraceString;
     }
 
     private String truncateMessage(String msg) {
