@@ -3,6 +3,9 @@ package com.apitally.common.dto;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public class ServerError {
     private static final int MAX_MSG_LENGTH = 2048;
     private static final int MAX_STACKTRACE_LENGTH = 65536;
@@ -26,30 +29,37 @@ public class ServerError {
         this.stackTraceString = truncateStackTrace(stackTrace);
     }
 
+    @JsonProperty("consumer")
     public String getConsumer() {
         return consumer;
     }
 
+    @JsonProperty("method")
     public String getMethod() {
         return method;
     }
 
+    @JsonProperty("path")
     public String getPath() {
         return path;
     }
 
+    @JsonProperty("type")
     public String getType() {
         return type;
     }
 
+    @JsonProperty("msg")
     public String getMessage() {
         return message;
     }
 
+    @JsonIgnore
     public StackTraceElement[] getStackTrace() {
         return stackTrace;
     }
 
+    @JsonProperty("traceback")
     public String getStackTraceString() {
         return stackTraceString;
     }

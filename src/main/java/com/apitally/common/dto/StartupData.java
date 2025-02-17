@@ -4,22 +4,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class StartupData {
+public class StartupData extends BaseDto {
     private final UUID instanceUuid;
     private final UUID messageUuid;
-    private final List<PathItem> paths;
+    private final List<Path> paths;
     private final Map<String, String> versions;
     private final String client;
 
-    @JsonCreator
-    public StartupData(
-            @JsonProperty("instance_uuid") UUID instanceUuid,
-            @JsonProperty("paths") List<PathItem> paths,
-            @JsonProperty("versions") Map<String, String> versions,
-            @JsonProperty("client") String client) {
+    public StartupData(UUID instanceUuid, List<Path> paths, Map<String, String> versions, String client) {
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();
         this.paths = paths;
@@ -37,14 +31,17 @@ public class StartupData {
         return messageUuid;
     }
 
-    public List<PathItem> getPaths() {
+    @JsonProperty("paths")
+    public List<Path> getPaths() {
         return paths;
     }
 
+    @JsonProperty("versions")
     public Map<String, String> getVersions() {
         return versions;
     }
 
+    @JsonProperty("client")
     public String getClient() {
         return client;
     }

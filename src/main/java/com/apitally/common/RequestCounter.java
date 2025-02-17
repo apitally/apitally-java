@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.apitally.common.dto.RequestsItem;
+import com.apitally.common.dto.Requests;
 
 public class RequestCounter {
     private final Map<String, Integer> requestCounts;
@@ -60,8 +60,8 @@ public class RequestCounter {
         }
     }
 
-    public List<RequestsItem> getAndResetRequests() {
-        List<RequestsItem> data = new ArrayList<>();
+    public List<Requests> getAndResetRequests() {
+        List<Requests> data = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : requestCounts.entrySet()) {
             String key = entry.getKey();
@@ -75,7 +75,7 @@ public class RequestCounter {
             Map<Integer, Integer> requestSizeMap = requestSizes.getOrDefault(key, new HashMap<>());
             Map<Integer, Integer> responseSizeMap = responseSizes.getOrDefault(key, new HashMap<>());
 
-            RequestsItem item = new RequestsItem(
+            Requests item = new Requests(
                     consumer,
                     method,
                     path,

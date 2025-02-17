@@ -7,10 +7,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.apitally.common.dto.ApitallyConsumer;
+import com.apitally.common.dto.Consumer;
 
 public class ConsumerRegistry {
-    private final Map<String, ApitallyConsumer> consumers;
+    private final Map<String, Consumer> consumers;
     private final Set<String> updated;
 
     public ConsumerRegistry() {
@@ -18,25 +18,25 @@ public class ConsumerRegistry {
         this.updated = new HashSet<>();
     }
 
-    public static ApitallyConsumer consumerFromStringOrObject(Object consumer) {
+    public static Consumer consumerFromStringOrObject(Object consumer) {
         if (consumer == null) {
             return null;
         }
         if (consumer instanceof String) {
             String identifier = (String) consumer;
-            return identifier.trim().isEmpty() ? null : new ApitallyConsumer(identifier);
-        } else if (consumer instanceof ApitallyConsumer c) {
+            return identifier.trim().isEmpty() ? null : new Consumer(identifier);
+        } else if (consumer instanceof Consumer c) {
             return c.getIdentifier().trim().isEmpty() ? null : c;
         }
         return null;
     }
 
-    public void addOrUpdateConsumer(ApitallyConsumer consumer) {
+    public void addOrUpdateConsumer(Consumer consumer) {
         if (consumer == null || (consumer.getName() == null && consumer.getGroup() == null)) {
             return;
         }
 
-        ApitallyConsumer existing = consumers.get(consumer.getIdentifier());
+        Consumer existing = consumers.get(consumer.getIdentifier());
         if (existing == null) {
             consumers.put(consumer.getIdentifier(), consumer);
             updated.add(consumer.getIdentifier());
@@ -56,16 +56,16 @@ public class ConsumerRegistry {
 
             if (hasChanges) {
                 consumers.put(consumer.getIdentifier(),
-                        new ApitallyConsumer(consumer.getIdentifier(), newName, newGroup));
+                        new Consumer(consumer.getIdentifier(), newName, newGroup));
                 updated.add(consumer.getIdentifier());
             }
         }
     }
 
-    public List<ApitallyConsumer> getAndResetUpdatedConsumers() {
-        List<ApitallyConsumer> data = new ArrayList<>();
+    public List<Consumer> getAndResetUpdatedConsumers() {
+        List<Consumer> data = new ArrayList<>();
         for (String identifier : updated) {
-            ApitallyConsumer consumer = consumers.get(identifier);
+            Consumer consumer = consumers.get(identifier);
             if (consumer != null) {
                 data.add(consumer);
             }

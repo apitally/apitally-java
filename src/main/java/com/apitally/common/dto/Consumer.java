@@ -1,15 +1,17 @@
 package com.apitally.common.dto;
 
-public final class ApitallyConsumer {
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+public final class Consumer {
     private final String identifier;
     private final String name;
     private final String group;
 
-    public ApitallyConsumer(String identifier) {
+    public Consumer(String identifier) {
         this(identifier, null, null);
     }
 
-    public ApitallyConsumer(String identifier, String name, String group) {
+    public Consumer(String identifier, String name, String group) {
         if (identifier != null) {
             identifier = identifier.trim();
             if (identifier.length() > 128) {
@@ -33,14 +35,17 @@ public final class ApitallyConsumer {
         this.group = group;
     }
 
+    @JsonProperty("identifier")
     public String getIdentifier() {
         return identifier;
     }
 
+    @JsonProperty("name")
     public String getName() {
         return name;
     }
 
+    @JsonProperty("group")
     public String getGroup() {
         return group;
     }

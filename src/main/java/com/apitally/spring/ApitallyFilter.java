@@ -10,7 +10,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import com.apitally.common.ApitallyClient;
 import com.apitally.common.ConsumerRegistry;
-import com.apitally.common.dto.ApitallyConsumer;
+import com.apitally.common.dto.Consumer;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -52,7 +52,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
                         response.getStatus());
                 System.out.printf("Response body: %s%n", new String(responseBody));
 
-                ApitallyConsumer consumer = ConsumerRegistry
+                Consumer consumer = ConsumerRegistry
                         .consumerFromStringOrObject(request.getAttribute("apitallyConsumer"));
                 apitallyClient.consumerRegistry.addOrUpdateConsumer(consumer);
                 String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";

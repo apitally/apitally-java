@@ -18,7 +18,7 @@ import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import com.apitally.common.ApitallyClient;
-import com.apitally.common.dto.PathItem;
+import com.apitally.common.dto.Path;
 
 @Configuration
 @EnableAsync
@@ -28,7 +28,7 @@ public class ApitallyAutoConfiguration {
     public ApitallyClient apitallyClient(ApitallyProperties properties,
             RequestMappingHandlerMapping requestMappingHandlerMapping) {
         ApitallyClient client = ApitallyClient.getInstance(properties.getClientId(), properties.getEnv());
-        List<PathItem> paths = requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
+        List<Path> paths = requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
                 .flatMap(entry -> {
                     RequestMappingInfo mappingInfo = entry.getKey();
                     return mappingInfo.getMethodsCondition().getMethods().stream()
@@ -36,14 +36,14 @@ public class ApitallyAutoConfiguration {
                                 PathPatternsRequestCondition pathPatterns = mappingInfo.getPathPatternsCondition();
                                 if (pathPatterns != null && pathPatterns.getPatterns() != null) {
                                     return pathPatterns.getPatterns().stream()
-                                            .map(pattern -> new PathItem(method.name(), pattern.getPatternString()));
+                                            .map(pattern -> new Path(method.name(), pattern.getPatternString()));
                                 }
                                 PatternsRequestCondition patterns = mappingInfo.getPatternsCondition();
                                 if (patterns != null && patterns.getPatterns() != null) {
                                     return patterns.getPatterns().stream()
-                                            .map(pattern -> new PathItem(method.name(), pattern));
+                                            .map(pattern -> new Path(method.name(), pattern));
                                 }
-                                return List.<PathItem>of().stream();
+                                return List.<Path>of().stream();
                             });
                 })
                 .collect(Collectors.toList());

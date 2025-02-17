@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.apitally.common.dto.ServerError;
-import com.apitally.common.dto.ServerErrorsItem;
+import com.apitally.common.dto.ServerErrors;
 
 public class ServerErrorCounter {
     private final Map<String, Integer> errorCounts;
@@ -28,12 +28,12 @@ public class ServerErrorCounter {
         errorCounts.merge(key, 1, Integer::sum);
     }
 
-    public List<ServerErrorsItem> getAndResetServerErrors() {
-        List<ServerErrorsItem> data = new ArrayList<>();
+    public List<ServerErrors> getAndResetServerErrors() {
+        List<ServerErrors> data = new ArrayList<>();
         errorCounts.forEach((key, count) -> {
             ServerError error = errorDetails.get(key);
             if (error != null) {
-                data.add(new ServerErrorsItem(
+                data.add(new ServerErrors(
                         error.getConsumer(),
                         error.getMethod(),
                         error.getPath(),

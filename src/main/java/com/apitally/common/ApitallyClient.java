@@ -8,8 +8,11 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -19,10 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.support.RetryTemplate;
 
-import com.apitally.common.dto.PathItem;
+import com.apitally.common.dto.Path;
 import com.apitally.common.dto.StartupData;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.apitally.common.dto.SyncData;
 
 public class ApitallyClient {
     private static class RetryableHubRequestException extends Exception {
@@ -68,6 +70,9 @@ public class ApitallyClient {
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
 
+    private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<SyncData>();
+    private final Random random = new Random();
+
     private ApitallyClient(String clientId, String env) {
         this.clientId = clientId;
         this.env = env;
@@ -83,6 +88,8 @@ public class ApitallyClient {
             return thread;
         });
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .followRedirects(HttpClient.Redirect.NORMAL)
                 .connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
                 .build();
 
@@ -106,7 +113,7 @@ public class ApitallyClient {
         return URI.create(baseUrl + "/v2/" + clientId + "/" + env + "/" + endpoint);
     }
 
-    public void setStartupData(List<PathItem> paths, Map<String, String> versions, String client) {
+    public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
         startupData = new StartupData(instanceUuid, paths, versions, client);
         sendStartupData();
     }
@@ -115,24 +122,52 @@ public class ApitallyClient {
         if (startupData == null) {
             return;
         }
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(getHubUrl("startup"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(new ObjectMapper().writeValueAsString(startupData)))
-                    .build();
-            sendHubRequest(request).thenAccept(status -> {
-                if (status == HubRequestStatus.OK) {
-                    startupDataSent = true;
-                    startupData = null;
-                } else if (status == HubRequestStatus.VALIDATION_ERROR) {
-                    startupDataSent = false;
-                    startupData = null;
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(getHubUrl("startup"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(startupData.toJSON()))
+                .build();
+        sendHubRequest(request).thenAccept(status -> {
+            if (status == HubRequestStatus.OK) {
+                startupDataSent = true;
+                startupData = null;
+            } else if (status == HubRequestStatus.VALIDATION_ERROR) {
+                startupDataSent = false;
+                startupData = null;
+            }
+        });
+    }
+
+    private void sendSyncData() {
+        SyncData data = new SyncData(
+                instanceUuid,
+                requestCounter.getAndResetRequests(),
+                serverErrorCounter.getAndResetServerErrors(),
+                consumerRegistry.getAndResetUpdatedConsumers());
+        syncDataQueue.offer(data);
+
+        int i = 0;
+        while (!syncDataQueue.isEmpty()) {
+            SyncData payload = syncDataQueue.poll();
+            if (payload != null) {
+                try {
+                    if (payload.getAgeInSeconds() <= MAX_QUEUE_TIME_SECONDS) {
+                        if (i > 0) {
+                            // Add random delay between retries
+                            Thread.sleep(100 + random.nextInt(400));
+                        }
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(getHubUrl("sync"))
+                                .header("Content-Type", "application/json")
+                                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSON()))
+                                .build();
+                        sendHubRequest(request);
+                        i++;
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                 }
-            });
-        } catch (JsonProcessingException e) {
-            startupDataSent = false;
-            startupData = null;
+            }
         }
     }
 
@@ -194,16 +229,9 @@ public class ApitallyClient {
     }
 
     private void sync() {
-        try {
-            logger.debug("Syncing with Apitally Hub");
-            // Implement sync logic here
-            // sendSyncData();
-            // sendLogData();
-            // if (!startupDataSent) {
-            // sendStartupData();
-            // }
-        } catch (Exception e) {
-            logger.error("Error while syncing with Apitally Hub", e);
+        sendSyncData();
+        if (!startupDataSent) {
+            sendStartupData();
         }
     }
 
