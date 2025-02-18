@@ -14,6 +14,7 @@ public class ApitallyProperties {
     private String clientId;
     @Pattern(regexp = "^[\\w-]{1,32}$", message = "Env must be 1-32 characters long and contain only word characters and hyphens")
     private String env = "default";
+    private RequestLoggingConfig requestLogging = new RequestLoggingConfig();
 
     public String getClientId() {
         return clientId;
@@ -29,5 +30,16 @@ public class ApitallyProperties {
 
     public void setEnv(String env) {
         this.env = env;
+    }
+
+    public RequestLoggingConfig getRequestLogging() {
+        return requestLogging;
+    }
+
+    public void setRequestLogging(RequestLoggingConfig requestLogging) {
+        this.requestLogging = requestLogging;
+    }
+
+    public static class RequestLoggingConfig extends com.apitally.common.RequestLoggingConfig {
     }
 }

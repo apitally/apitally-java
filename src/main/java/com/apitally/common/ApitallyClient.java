@@ -67,18 +67,20 @@ public class ApitallyClient {
     private boolean startupDataSent = false;
 
     public final RequestCounter requestCounter;
+    public final RequestLogger requestLogger;
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
 
     private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<SyncData>();
     private final Random random = new Random();
 
-    private ApitallyClient(String clientId, String env) {
+    private ApitallyClient(String clientId, String env, RequestLoggingConfig requestLoggingConfig) {
         this.clientId = clientId;
         this.env = env;
         this.instanceUuid = java.util.UUID.randomUUID();
 
         this.requestCounter = new RequestCounter();
+        this.requestLogger = new RequestLogger(requestLoggingConfig);
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
 
@@ -96,9 +98,10 @@ public class ApitallyClient {
         startSync();
     }
 
-    public static synchronized ApitallyClient getInstance(String clientId, String env) {
+    public static synchronized ApitallyClient getInstance(String clientId, String env,
+            RequestLoggingConfig requestLoggingConfig) {
         if (instance == null) {
-            instance = new ApitallyClient(clientId, env);
+            instance = new ApitallyClient(clientId, env, requestLoggingConfig);
         } else if (!instance.clientId.equals(clientId) || !instance.env.equals(env)) {
             throw new IllegalStateException(
                     String.format(

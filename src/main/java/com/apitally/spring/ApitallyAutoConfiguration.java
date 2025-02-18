@@ -27,7 +27,8 @@ public class ApitallyAutoConfiguration {
     @Bean
     public ApitallyClient apitallyClient(ApitallyProperties properties,
             RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        ApitallyClient client = ApitallyClient.getInstance(properties.getClientId(), properties.getEnv());
+        ApitallyClient client = ApitallyClient.getInstance(properties.getClientId(), properties.getEnv(),
+                properties.getRequestLogging());
         List<Path> paths = requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
                 .flatMap(entry -> {
                     RequestMappingInfo mappingInfo = entry.getKey();
