@@ -31,7 +31,6 @@ jobs:
         with:
           java-version: ${{ matrix.java }}
           distribution: temurin
-          cache: maven
       - name: Build and test with Maven
         run: |
           mvn -B versions:update-parent -DparentVersion=${{ matrix.spring-boot }} &&
