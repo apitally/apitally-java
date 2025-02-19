@@ -2,6 +2,7 @@ package com.apitally.common;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
@@ -33,20 +34,36 @@ public class TempGzipFile implements AutoCloseable {
         return size;
     }
 
-    public void writeLine(byte[] data) throws IOException {
-        gzipOutputStream.write(data);
-        gzipOutputStream.write('\n');
-        size += data.length + 1;
+    public void writeLine(byte[] data) {
+        try {
+            gzipOutputStream.write(data);
+            gzipOutputStream.write('\n');
+            size += data.length + 1;
+        } catch (IOException e) {
+            // Ignore
+        }
     }
 
     @Override
-    public void close() throws IOException {
-        gzipOutputStream.close();
-        fileOutputStream.close();
+    public void close() {
+        try {
+            gzipOutputStream.close();
+            fileOutputStream.close();
+        } catch (IOException e) {
+            // Ignore
+        }
     }
 
-    public void delete() throws IOException {
-        close();
-        Files.deleteIfExists(path);
+    public void delete() {
+        try {
+            close();
+            Files.deleteIfExists(path);
+        } catch (IOException e) {
+            // Ignore
+        }
+    }
+
+    public InputStream getInputStream() throws IOException {
+        return Files.newInputStream(path);
     }
 }

@@ -74,8 +74,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 
                 // Add request to counter
-                final long requestSize = request.getContentLength();
-                final long responseSize = responseBody.length;
+                final long requestContentLength = request.getContentLengthLong();
+                final long requestSize = requestContentLength >= 0 ? requestContentLength : requestBody.length;
+                final long responseContentLength = getResponseContentLength(response);
+                final long responseSize = responseContentLength >= 0
+                        ? responseContentLength
+                        : responseBody.length;
                 client.requestCounter
                         .addRequest(consumerIdentifier, request.getMethod(), path, response.getStatus(),
                                 responseTimeInMillis,
@@ -102,12 +106,23 @@ public class ApitallyFilter extends OncePerRequestFilter {
                             new Request(startTime / 1000.0, consumerIdentifier, request.getMethod(),
                                     path,
                                     request.getRequestURL().toString(), requestHeaders, requestSize, requestBody),
-                            new Response(response.getStatus(), responseTimeInMillis, responseHeaders,
+                            new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
                                     responseSize, responseBody));
                 }
             } catch (Exception e) {
                 logger.error("Error in Apitally filter", e);
             }
         }
+    }
+
+    private static long getResponseContentLength(HttpServletResponse response) {
+        String contentLength = response.getHeader("content-length");
+        if (contentLength != null) {
+            try {
+                return Long.parseLong(contentLength);
+            } catch (NumberFormatException e) {
+            }
+        }
+        return -1L;
     }
 }

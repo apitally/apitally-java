@@ -10,9 +10,16 @@ import java.util.Deque;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.apitally.common.dto.Header;
 import com.apitally.common.dto.Request;
@@ -21,6 +28,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class RequestLogger {
+    private static final Logger logger = LoggerFactory.getLogger(RequestLogger.class);
+
     private static final int MAX_BODY_SIZE = 50_000; // 50 KB (uncompressed)
     private static final int MAX_FILE_SIZE = 1_000_000; // 1 MB (compressed)
     private static final int MAX_FILES = 50;
@@ -55,6 +64,7 @@ public class RequestLogger {
             "secret",
             "token",
             "cookie");
+    private static final int MAINTAIN_INTERVAL_SECONDS = 1;
 
     private final RequestLoggingConfig config;
     private final ObjectMapper objectMapper;
@@ -64,6 +74,8 @@ public class RequestLogger {
     private TempGzipFile currentFile;
     private boolean enabled;
     private Long suspendUntil;
+    private ScheduledExecutorService scheduler;
+    private ScheduledFuture<?> maintainTask;
 
     private final List<Pattern> compiledPathExcludePatterns;
     private final List<Pattern> compiledUserAgentExcludePatterns;
@@ -83,6 +95,10 @@ public class RequestLogger {
         this.compiledQueryParamMaskPatterns = compilePatterns(MASK_QUERY_PARAM_PATTERNS,
                 config.getQueryParamMaskPatterns());
         this.compiledHeaderMaskPatterns = compilePatterns(MASK_HEADER_PATTERNS, config.getHeaderMaskPatterns());
+
+        if (enabled) {
+            startMaintenance();
+        }
     }
 
     private static List<Pattern> compilePatterns(List<String> defaultPatterns, List<String> additionalPatterns) {
@@ -101,6 +117,10 @@ public class RequestLogger {
 
     public boolean isEnabled() {
         return enabled;
+    }
+
+    public void setSuspendUntil(long timestamp) {
+        this.suspendUntil = timestamp;
     }
 
     public void logRequest(Request request, Response response) {
@@ -127,7 +147,7 @@ public class RequestLogger {
                     request.setUrl(new java.net.URL(url.getProtocol(), url.getHost(), url.getPort(),
                             url.getPath() + (query != null ? "?" + query : "")).toString());
                 } catch (MalformedURLException e) {
-                    // Skip URL processing if invalid
+                    return;
                 }
             }
 
@@ -172,7 +192,7 @@ public class RequestLogger {
                 pendingWrites.poll();
             }
         } catch (Exception e) {
-            // Log error but don't throw
+            logger.error("Error while logging request", e);
         }
     }
 
@@ -202,7 +222,7 @@ public class RequestLogger {
         files.addFirst(file);
     }
 
-    public void rotateFile() throws IOException {
+    public void rotateFile() {
         lock.lock();
         try {
             if (currentFile != null) {
@@ -215,8 +235,12 @@ public class RequestLogger {
         }
     }
 
-    public void maintain() throws IOException {
-        writeToFile();
+    public void maintain() {
+        try {
+            writeToFile();
+        } catch (IOException e) {
+            // Ignore
+        }
         if (currentFile != null && currentFile.getSize() > MAX_FILE_SIZE) {
             rotateFile();
         }
@@ -231,7 +255,7 @@ public class RequestLogger {
         }
     }
 
-    public void clear() throws IOException {
+    public void clear() {
         pendingWrites.clear();
         rotateFile();
         for (TempGzipFile file : files) {
@@ -240,9 +264,43 @@ public class RequestLogger {
         files.clear();
     }
 
-    public void close() throws IOException {
+    public void close() {
         enabled = false;
+        stopMaintenance();
         clear();
+    }
+
+    private void startMaintenance() {
+        if (scheduler == null) {
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "apitally-request-logger");
+                thread.setDaemon(true);
+                return thread;
+            });
+        }
+        maintainTask = scheduler.scheduleAtFixedRate(
+                this::maintain,
+                0,
+                MAINTAIN_INTERVAL_SECONDS,
+                TimeUnit.SECONDS);
+    }
+
+    private void stopMaintenance() {
+        if (maintainTask != null) {
+            maintainTask.cancel(false);
+            maintainTask = null;
+        }
+        if (scheduler != null) {
+            scheduler.shutdown();
+            try {
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     private boolean shouldExcludePath(String path) {

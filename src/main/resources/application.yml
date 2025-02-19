@@ -1,0 +1,17 @@
+server:
+  port: 8085
+
+apitally:
+  client-id: 25e02335-9d6d-4b06-afae-d4bd20a7f8ee
+  env: dev
+  request-logging:
+    enabled: true
+    query-params-included: true
+    request-headers-included: true
+    request-body-included: true
+    response-body-included: true
+    response-headers-included: true
+
+logging:
+  level:
+    com.apitally: DEBUG
