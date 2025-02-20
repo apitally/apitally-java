@@ -1,46 +1,72 @@
 package com.apitally.spring;
 
-import org.junit.jupiter.api.BeforeEach;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+
+import java.util.List;
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.core.Ordered;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import com.apitally.common.ApitallyClient;
+import com.apitally.common.dto.Path;
+import com.apitally.spring.app.TestApplication;
 
-@ExtendWith(MockitoExtension.class)
+@SpringBootTest(classes = TestApplication.class)
+@AutoConfigureMockMvc
+@ContextConfiguration(classes = ApitallyFilterTest.TestConfig.class)
 class ApitallyFilterTest {
 
-    @Mock
-    private HttpServletRequest request;
+    @TestConfiguration
+    @EnableConfigurationProperties(ApitallyProperties.class)
+    static class TestConfig {
+        @Bean
+        public ApitallyClient apitallyClient(ApitallyProperties properties,
+                RequestMappingHandlerMapping requestMappingHandlerMapping) {
+            ApitallyClient client = ApitallyClient.getInstance(properties.getClientId(), properties.getEnv(),
+                    properties.getRequestLogging());
+            List<Path> paths = ApitallyUtils.getPaths(requestMappingHandlerMapping);
+            Map<String, String> versions = ApitallyUtils.getVersions();
+            client.setStartupData(paths, versions, "java:spring");
+            return client;
+        }
 
-    @Mock
-    private HttpServletResponse response;
+        @Bean
+        public FilterRegistrationBean<ApitallyFilter> filterRegistration(ApitallyClient apitallyClient) {
+            final FilterRegistrationBean<ApitallyFilter> registrationBean = new FilterRegistrationBean<>();
+            registrationBean.setFilter(new ApitallyFilter(apitallyClient));
+            registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE - 10);
+            return registrationBean;
+        }
+    }
 
-    @Mock
-    private FilterChain filterChain;
+    @Autowired
+    private MockMvc mockMvc;
 
-    private ApitallyFilter filter;
+    @Autowired
+    private ApitallyClient apitallyClient;
 
-    @BeforeEach
-    void setUp() {
-        // TODO: Initialize filter with appropriate configuration
+    @Test
+    void testHealthEndpoint() throws Exception {
+        System.out.println("apitallyClient: " + apitallyClient.toString());
+        mockMvc.perform(get("/healthz"))
+                .andExpect(status().isOk());
     }
 
     @Test
-    void testDoFilterInternal() throws Exception {
-        // TODO: Test filter chain execution
-    }
-
-    @Test
-    void testRequestLogging() throws Exception {
-        // TODO: Test request logging functionality
-    }
-
-    @Test
-    void testErrorHandling() throws Exception {
-        // TODO: Test error scenarios
+    void testEmployeesEndpoint() throws Exception {
+        mockMvc.perform(get("/employees"))
+                .andExpect(status().isOk());
     }
 }

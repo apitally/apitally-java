@@ -28,13 +28,13 @@ import com.apitally.common.dto.StartupData;
 import com.apitally.common.dto.SyncData;
 
 public class ApitallyClient {
-    private static class RetryableHubRequestException extends Exception {
+    public static class RetryableHubRequestException extends Exception {
         public RetryableHubRequestException(String message) {
             super(message);
         }
     }
 
-    private enum HubRequestStatus {
+    public enum HubRequestStatus {
         OK,
         VALIDATION_ERROR,
         INVALID_CLIENT_ID,
@@ -62,8 +62,8 @@ public class ApitallyClient {
     private final String clientId;
     private final String env;
     private final UUID instanceUuid;
-    private final ScheduledExecutorService scheduler;
     private final HttpClient httpClient;
+    private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> syncTask;
     private StartupData startupData;
     private boolean startupDataSent = false;
@@ -80,24 +80,12 @@ public class ApitallyClient {
         this.clientId = clientId;
         this.env = env;
         this.instanceUuid = java.util.UUID.randomUUID();
+        this.httpClient = createHttpClient();
 
         this.requestCounter = new RequestCounter();
         this.requestLogger = new RequestLogger(requestLoggingConfig);
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
-
-        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
-            Thread thread = new Thread(r, "apitally-sync");
-            thread.setDaemon(true);
-            return thread;
-        });
-        this.httpClient = HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
-                .build();
-
-        startSync();
     }
 
     public static synchronized ApitallyClient getInstance(String clientId, String env,
@@ -111,6 +99,14 @@ public class ApitallyClient {
                             instance.clientId, instance.env, clientId, env));
         }
         return instance;
+    }
+
+    private HttpClient createHttpClient() {
+        return HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .followRedirects(HttpClient.Redirect.NORMAL)
+                .connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
+                .build();
     }
 
     private URI getHubUrl(String endpoint) {
@@ -127,7 +123,6 @@ public class ApitallyClient {
 
     public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
         startupData = new StartupData(instanceUuid, paths, versions, client);
-        sendStartupData();
     }
 
     private void sendStartupData() {
@@ -226,7 +221,7 @@ public class ApitallyClient {
         }
     }
 
-    private CompletableFuture<HubRequestStatus> sendHubRequest(HttpRequest request) {
+    public CompletableFuture<HubRequestStatus> sendHubRequest(HttpRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             try {
                 return retryTemplate.execute(context -> {
@@ -273,7 +268,19 @@ public class ApitallyClient {
         });
     }
 
-    private void startSync() {
+    public void startSync() {
+        if (scheduler == null) {
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "apitally-sync");
+                thread.setDaemon(true);
+                return thread;
+            });
+        }
+
+        if (syncTask != null) {
+            syncTask.cancel(false);
+        }
+
         // Start with shorter initial sync interval
         syncTask = scheduler.scheduleAtFixedRate(
                 this::sync,
@@ -292,29 +299,39 @@ public class ApitallyClient {
         }, INITIAL_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
-    private void stopSync() {
-        syncTask.cancel(false);
-        syncTask = null;
-        scheduler.shutdown();
+    public void stopSync() {
+        if (syncTask != null) {
+            syncTask.cancel(false);
+            syncTask = null;
+        }
     }
 
     private void sync() {
-        sendSyncData();
-        sendLogData();
         if (!startupDataSent) {
             sendStartupData();
         }
+        sendSyncData();
+        sendLogData();
     }
 
     public void shutdown() {
         try {
+            boolean syncRunning = syncTask != null;
             stopSync();
-            sync();
-            if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
+            if (syncRunning) {
+                // Final sync to ensure all data is sent
+                sync();
+            }
+            if (scheduler != null) {
+                scheduler.shutdown();
+                if (!scheduler.awaitTermination(5, TimeUnit.SECONDS)) {
+                    scheduler.shutdownNow();
+                }
             }
         } catch (InterruptedException e) {
-            scheduler.shutdownNow();
+            if (scheduler != null) {
+                scheduler.shutdownNow();
+            }
             Thread.currentThread().interrupt();
         }
     }
