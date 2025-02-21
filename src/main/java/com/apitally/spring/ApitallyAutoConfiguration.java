@@ -8,14 +8,12 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
-import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import com.apitally.common.ApitallyClient;
 import com.apitally.common.dto.Path;
 
 @Configuration
-@EnableAsync
 @EnableConfigurationProperties(ApitallyProperties.class)
 public class ApitallyAutoConfiguration {
     @Bean
@@ -31,10 +29,15 @@ public class ApitallyAutoConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<ApitallyFilter> filterRegistration(ApitallyClient apitallyClient) {
+    public FilterRegistrationBean<ApitallyFilter> apitallyFilterRegistration(ApitallyClient apitallyClient) {
         final FilterRegistrationBean<ApitallyFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new ApitallyFilter(apitallyClient));
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE - 10);
         return registrationBean;
+    }
+
+    @Bean
+    public ApitallyExceptionResolver apitallyExceptionResolver() {
+        return new ApitallyExceptionResolver();
     }
 }

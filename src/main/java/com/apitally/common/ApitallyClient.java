@@ -153,7 +153,7 @@ public class ApitallyClient {
                 instanceUuid,
                 requestCounter.getAndResetRequests(),
                 serverErrorCounter.getAndResetServerErrors(),
-                consumerRegistry.getAndResetUpdatedConsumers());
+                consumerRegistry.getAndResetConsumers());
         syncDataQueue.offer(data);
 
         int i = 0;

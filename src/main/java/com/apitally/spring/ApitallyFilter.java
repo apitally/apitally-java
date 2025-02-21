@@ -86,9 +86,15 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                 requestSize, responseSize);
 
                 // Add server error to counter
-                if (response.getStatus() == 500 && exception != null) {
-                    client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(),
-                            path, exception);
+                if (response.getStatus() == 500) {
+                    Object capturedException = request.getAttribute("apitallyCapturedException");
+                    if (exception == null && capturedException != null && capturedException instanceof Exception) {
+                        exception = (Exception) capturedException;
+                    }
+                    if (exception != null) {
+                        client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path,
+                                exception);
+                    }
                 }
 
                 // Log request

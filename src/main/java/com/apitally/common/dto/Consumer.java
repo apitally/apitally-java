@@ -2,7 +2,7 @@ package com.apitally.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public final class Consumer {
+public class Consumer {
     private final String identifier;
     private final String name;
     private final String group;

@@ -35,7 +35,6 @@ public class ConsumerRegistry {
         if (consumer == null || (consumer.getName() == null && consumer.getGroup() == null)) {
             return;
         }
-
         Consumer existing = consumers.get(consumer.getIdentifier());
         if (existing == null) {
             consumers.put(consumer.getIdentifier(), consumer);
@@ -62,7 +61,7 @@ public class ConsumerRegistry {
         }
     }
 
-    public List<Consumer> getAndResetUpdatedConsumers() {
+    public List<Consumer> getAndResetConsumers() {
         List<Consumer> data = new ArrayList<>();
         for (String identifier : updated) {
             Consumer consumer = consumers.get(identifier);
