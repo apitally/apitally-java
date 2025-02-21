@@ -8,9 +8,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.web.servlet.error.ErrorMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -31,7 +31,7 @@ import com.apitally.spring.app.TestApplication;
 
 @SpringBootTest(classes = TestApplication.class)
 @AutoConfigureMockMvc
-@ContextConfiguration(classes = { ApitallyFilterTest.TestConfig.class, ErrorMvcAutoConfiguration.class })
+@ContextConfiguration(classes = { ApitallyFilterTest.TestConfig.class })
 class ApitallyFilterTest {
 
     @TestConfiguration
@@ -66,6 +66,13 @@ class ApitallyFilterTest {
     @Autowired
     private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
+    @BeforeEach
+    void setUp() {
+        apitallyClient.requestCounter.getAndResetRequests();
+        apitallyClient.serverErrorCounter.getAndResetServerErrors();
+        apitallyClient.consumerRegistry.getAndResetConsumers();
+    }
+
     @Test
     void testRequestCounter() throws Exception {
         mockMvc.perform(get("/items"))
@@ -74,7 +81,7 @@ class ApitallyFilterTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/items/2"))
                 .andExpect(status().isOk());
-        mockMvc.perform(get("/error"))
+        mockMvc.perform(get("/throw"))
                 .andExpect(status().is5xxServerError());
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
@@ -83,7 +90,7 @@ class ApitallyFilterTest {
                 .anyMatch(r -> r.getMethod().equals("GET") && r.getPath().equals("/items") && r.getStatusCode() == 200
                         && r.getRequestCount() == 1));
         assertTrue(requests.stream().anyMatch(r -> r.getPath().equals("/items/{id}") && r.getRequestCount() == 2));
-        assertTrue(requests.stream().anyMatch(r -> r.getPath().equals("/error") && r.getStatusCode() == 500));
+        assertTrue(requests.stream().anyMatch(r -> r.getPath().equals("/throw") && r.getStatusCode() == 500));
 
         requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(0, requests.size());

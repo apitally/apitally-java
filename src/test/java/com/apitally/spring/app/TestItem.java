@@ -1,4 +1,7 @@
 package com.apitally.spring.app;
 
-public record TestItem(Integer id, String name) {
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
+
+public record TestItem(@Min(1) Integer id, @Size(min = 2, max = 10) String name) {
 }
