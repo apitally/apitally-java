@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,12 +24,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 
 @RestController
 @Validated
 public class TestController {
     @GetMapping("/items")
-    public List<TestItem> getItems(HttpServletRequest request) {
+    public List<TestItem> getItems(HttpServletRequest request,
+            @RequestParam(required = false) @Size(min = 2, max = 10) String name) {
         ApitallyConsumer consumer = new ApitallyConsumer("tester", "Tester", "Test Group");
         request.setAttribute("apitallyConsumer", consumer);
         List<TestItem> items = new ArrayList<TestItem>();

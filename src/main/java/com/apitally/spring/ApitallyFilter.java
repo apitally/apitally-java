@@ -6,6 +6,8 @@ import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -22,6 +24,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.ConstraintViolationException;
 
 public class ApitallyFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(ApitallyFilter.class);
@@ -85,18 +89,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                 responseTimeInMillis,
                                 requestSize, responseSize);
 
-                // Add server error to counter
-                if (response.getStatus() == 500) {
-                    Object capturedException = request.getAttribute("apitallyCapturedException");
-                    if (exception == null && capturedException != null && capturedException instanceof Exception) {
-                        exception = (Exception) capturedException;
-                    }
-                    if (exception != null) {
-                        client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path,
-                                exception);
-                    }
-                }
-
                 // Log request
                 if (client.requestLogger.isEnabled()) {
                     final Header[] requestHeaders = Collections.list(request.getHeaderNames()).stream()
@@ -115,10 +107,43 @@ public class ApitallyFilter extends OncePerRequestFilter {
                             new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
                                     responseSize, responseBody));
                 }
+
+                // Add validation error to counter
+                if (response.getStatus() >= 400 && response.getStatus() < 500) {
+                    Object capturedException = request.getAttribute("apitallyCapturedException");
+                    if (capturedException instanceof ConstraintViolationException e) {
+                        for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
+                            client.validationErrorCounter.addValidationError(consumerIdentifier, request.getMethod(),
+                                    path, violation.getPropertyPath().toString(), violation.getMessage(),
+                                    violation.getConstraintDescriptor().getAnnotation().annotationType()
+                                            .getSimpleName());
+                        }
+                    } else if (capturedException instanceof MethodArgumentNotValidException e) {
+                        for (FieldError error : e.getBindingResult().getFieldErrors()) {
+                            client.validationErrorCounter.addValidationError(consumerIdentifier, request.getMethod(),
+                                    path, error.getObjectName() + "." + error.getField(),
+                                    error.getDefaultMessage(),
+                                    error.getCode());
+                        }
+                    }
+                }
+
+                // Add server error to counter
+                if (response.getStatus() == 500) {
+                    Object capturedException = request.getAttribute("apitallyCapturedException");
+                    if (exception == null && capturedException != null && capturedException instanceof Exception) {
+                        exception = (Exception) capturedException;
+                    }
+                    if (exception != null) {
+                        client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path,
+                                exception);
+                    }
+                }
             } catch (Exception e) {
                 logger.error("Error in Apitally filter", e);
             }
         }
+
     }
 
     private static long getResponseContentLength(HttpServletResponse response) {

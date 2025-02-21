@@ -16,6 +16,9 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -25,6 +28,7 @@ import com.apitally.common.dto.Consumer;
 import com.apitally.common.dto.Path;
 import com.apitally.common.dto.Requests;
 import com.apitally.common.dto.ServerErrors;
+import com.apitally.common.dto.ValidationErrors;
 import com.apitally.spring.app.TestApplication;
 
 @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -66,6 +70,7 @@ class ApitallyFilterTest {
     @BeforeEach
     void setUp() {
         apitallyClient.requestCounter.getAndResetRequests();
+        apitallyClient.validationErrorCounter.getAndResetValidationErrors();
         apitallyClient.serverErrorCounter.getAndResetServerErrors();
         apitallyClient.consumerRegistry.getAndResetConsumers();
     }
@@ -89,19 +94,78 @@ class ApitallyFilterTest {
         response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
+        delay(100);
+
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(4, requests.size());
         assertTrue(requests.stream()
-                .anyMatch(r -> r.getMethod().equals("GET") && r.getPath().equals("/items") && r.getStatusCode() == 200
+                .anyMatch(r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items")
+                        && r.getStatusCode() == 200
                         && r.getRequestCount() == 1));
         assertTrue(requests.stream().anyMatch(
-                r -> r.getPath().equals("/items/{id}") && r.getStatusCode() == 200 && r.getRequestCount() == 2));
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items/{id}")
+                        && r.getStatusCode() == 200
+                        && r.getRequestCount() == 2));
         assertTrue(requests.stream().anyMatch(
-                r -> r.getPath().equals("/items/{id}") && r.getStatusCode() == 400 && r.getRequestCount() == 1));
-        assertTrue(requests.stream().anyMatch(r -> r.getPath().equals("/throw") && r.getStatusCode() == 500));
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items/{id}")
+                        && r.getStatusCode() == 400
+                        && r.getRequestCount() == 1));
+        assertTrue(requests.stream().anyMatch(
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/throw")
+                        && r.getStatusCode() == 500));
 
         requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(0, requests.size());
+    }
+
+    @Test
+    void testValidationErrorCounter() {
+        ResponseEntity<String> response;
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>("{\"name\": \"x\"}", headers);
+        response = restTemplate.postForEntity("/items", request, String.class);
+        assertTrue(response.getStatusCode().is4xxClientError());
+
+        response = restTemplate.getForEntity("/items?name=x", String.class);
+        assertTrue(response.getStatusCode().is4xxClientError());
+
+        response = restTemplate.getForEntity("/items/0", String.class);
+        assertTrue(response.getStatusCode().is4xxClientError());
+
+        delay(100);
+
+        List<ValidationErrors> validationErrors = apitallyClient.validationErrorCounter.getAndResetValidationErrors();
+        assertEquals(3, validationErrors.size());
+        assertTrue(
+                validationErrors.stream()
+                        .anyMatch(e -> e.getMethod().equals("POST")
+                                && e.getPath().equals("/items")
+                                && e.getLoc().equals("testItem.name")
+                                && e.getType().equals("Size")
+                                && e.getErrorCount() == 1));
+        assertTrue(
+                validationErrors.stream()
+                        .anyMatch(e -> e.getMethod().equals("GET")
+                                && e.getPath().equals("/items")
+                                && e.getLoc().equals("getItems.name")
+                                && e.getType().equals("Size")
+                                && e.getErrorCount() == 1));
+        assertTrue(
+                validationErrors.stream()
+                        .anyMatch(e -> e.getMethod().equals("GET")
+                                && e.getPath().equals("/items/{id}")
+                                && e.getLoc().equals("getItem.id")
+                                && e.getType().equals("Min")
+                                && e.getErrorCount() == 1));
+
+        validationErrors = apitallyClient.validationErrorCounter.getAndResetValidationErrors();
+        assertEquals(0, validationErrors.size());
     }
 
     @Test
@@ -109,10 +173,14 @@ class ApitallyFilterTest {
         ResponseEntity<String> response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
+        delay(100);
+
         List<ServerErrors> serverErrors = apitallyClient.serverErrorCounter.getAndResetServerErrors();
         assertEquals(1, serverErrors.size());
         assertTrue(serverErrors.stream().anyMatch(e -> e.getType().equals("TestException")
-                && e.getMessage().equals("test") && e.getStackTraceString().length() > 100 && e.getErrorCount() == 1));
+                && e.getMessage().equals("test")
+                && e.getStackTraceString().length() > 100
+                && e.getErrorCount() == 1));
 
         serverErrors = apitallyClient.serverErrorCounter.getAndResetServerErrors();
         assertEquals(0, serverErrors.size());
@@ -122,6 +190,8 @@ class ApitallyFilterTest {
     void testConsumerRegistry() {
         restTemplate.getForEntity("/items", String.class);
         restTemplate.getForEntity("/items", String.class);
+
+        delay(100);
 
         List<Consumer> consumers = apitallyClient.consumerRegistry.getAndResetConsumers();
         assertEquals(1, consumers.size());
@@ -149,5 +219,13 @@ class ApitallyFilterTest {
     void testGetVersions() {
         Map<String, String> versions = ApitallyUtils.getVersions();
         assertEquals(3, versions.size());
+    }
+
+    private void delay(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }

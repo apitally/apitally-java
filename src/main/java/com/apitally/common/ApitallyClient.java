@@ -70,6 +70,7 @@ public class ApitallyClient {
 
     public final RequestCounter requestCounter;
     public final RequestLogger requestLogger;
+    public final ValidationErrorCounter validationErrorCounter;
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
 
@@ -84,6 +85,7 @@ public class ApitallyClient {
 
         this.requestCounter = new RequestCounter();
         this.requestLogger = new RequestLogger(requestLoggingConfig);
+        this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
     }
@@ -152,6 +154,7 @@ public class ApitallyClient {
         SyncData data = new SyncData(
                 instanceUuid,
                 requestCounter.getAndResetRequests(),
+                validationErrorCounter.getAndResetValidationErrors(),
                 serverErrorCounter.getAndResetServerErrors(),
                 consumerRegistry.getAndResetConsumers());
         syncDataQueue.offer(data);

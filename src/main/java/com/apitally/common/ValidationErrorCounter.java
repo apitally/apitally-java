@@ -8,33 +8,32 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.apitally.common.dto.ServerError;
-import com.apitally.common.dto.ServerErrors;
+import com.apitally.common.dto.ValidationError;
+import com.apitally.common.dto.ValidationErrors;
 
-public class ServerErrorCounter {
+public class ValidationErrorCounter {
     private final Map<String, Integer> errorCounts;
-    private final Map<String, ServerError> errorDetails;
+    private final Map<String, ValidationError> errorDetails;
 
-    public ServerErrorCounter() {
+    public ValidationErrorCounter() {
         this.errorCounts = new ConcurrentHashMap<>();
         this.errorDetails = new ConcurrentHashMap<>();
     }
 
-    public void addServerError(String consumer, String method, String path, Exception exception) {
-        ServerError error = new ServerError(consumer, method, path, exception.getClass().getSimpleName(),
-                exception.getMessage(), exception.getStackTrace());
-        String key = getKey(error);
-        errorDetails.putIfAbsent(key, error);
+    public void addValidationError(String consumer, String method, String path, String loc, String msg, String type) {
+        ValidationError validationError = new ValidationError(consumer, method, path, loc, msg, type);
+        String key = getKey(validationError);
+        errorDetails.putIfAbsent(key, validationError);
         errorCounts.merge(key, 1, Integer::sum);
     }
 
-    public List<ServerErrors> getAndResetServerErrors() {
-        List<ServerErrors> data = new ArrayList<>();
+    public List<ValidationErrors> getAndResetValidationErrors() {
+        List<ValidationErrors> data = new ArrayList<>();
         errorCounts.forEach((key, count) -> {
-            ServerError error = errorDetails.get(key);
+            ValidationError error = errorDetails.get(key);
             if (error != null) {
-                data.add(new ServerErrors(error.getConsumer(), error.getMethod(), error.getPath(), error.getType(),
-                        error.getMessage(), error.getStackTrace(), count));
+                data.add(new ValidationErrors(error.getConsumer(), error.getMethod(), error.getPath(), error.getLoc(),
+                        error.getMsg(), error.getType(), count));
             }
         });
         errorCounts.clear();
@@ -42,14 +41,14 @@ public class ServerErrorCounter {
         return data;
     }
 
-    private String getKey(ServerError error) {
+    private String getKey(ValidationError error) {
         String hashInput = String.join("|",
                 error.getConsumer() != null ? error.getConsumer() : "",
-                error.getMethod(),
+                error.getMethod().toUpperCase(),
                 error.getPath(),
-                error.getType(),
-                error.getMessage(),
-                error.getStackTraceString());
+                String.join(".", error.getLoc()),
+                error.getMsg().trim(),
+                error.getType());
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(hashInput.getBytes());

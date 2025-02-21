@@ -11,15 +11,17 @@ public class SyncData extends BaseDto {
     private final UUID instanceUuid;
     private final UUID messageUuid;
     private final List<Requests> requests;
+    private final List<ValidationErrors> validationErrors;
     private final List<ServerErrors> serverErrors;
     private final List<Consumer> consumers;
 
-    public SyncData(UUID instanceUuid, List<Requests> requests, List<ServerErrors> serverErrors,
-            List<Consumer> consumers) {
+    public SyncData(UUID instanceUuid, List<Requests> requests, List<ValidationErrors> validationErrors,
+            List<ServerErrors> serverErrors, List<Consumer> consumers) {
         this.timestamp = System.currentTimeMillis() / 1000.0;
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();
         this.requests = requests;
+        this.validationErrors = validationErrors;
         this.serverErrors = serverErrors;
         this.consumers = consumers;
     }
@@ -42,6 +44,11 @@ public class SyncData extends BaseDto {
     @JsonProperty("requests")
     public List<Requests> getRequests() {
         return requests;
+    }
+
+    @JsonProperty("validation_errors")
+    public List<ValidationErrors> getValidationErrors() {
+        return validationErrors;
     }
 
     @JsonProperty("server_errors")
