@@ -48,5 +48,5 @@ jobs:
           distribution: temurin
       - name: Build and test with Maven
         run: |
-          mvn -B versions:update-parent -DparentVersion=${{ matrix.spring-boot }} &&
+          mvn -B versions:set-property -Dproperty=spring-boot.version -DnewVersion=${{ matrix.spring-boot }} &&
           mvn -B verify

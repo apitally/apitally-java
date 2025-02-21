@@ -1,9 +1,6 @@
-server:
-  port: 8085
-
 apitally:
-  client-id: 25e02335-9d6d-4b06-afae-d4bd20a7f8ee
-  env: dev
+  client-id: 00000000-0000-0000-0000-000000000000
+  env: test
   request-logging:
     enabled: true
     query-params-included: true
@@ -11,6 +8,10 @@ apitally:
     request-body-included: true
     response-body-included: true
     response-headers-included: true
+
+spring:
+  main:
+    banner-mode: off
 
 logging:
   level:

@@ -19,7 +19,7 @@ public class ApitallyAutoConfiguration {
     @Bean
     public ApitallyClient apitallyClient(ApitallyProperties properties,
             RequestMappingHandlerMapping requestMappingHandlerMapping) {
-        ApitallyClient client = ApitallyClient.getInstance(properties.getClientId(), properties.getEnv(),
+        ApitallyClient client = new ApitallyClient(properties.getClientId(), properties.getEnv(),
                 properties.getRequestLogging());
         List<Path> paths = ApitallyUtils.getPaths(requestMappingHandlerMapping);
         Map<String, String> versions = ApitallyUtils.getVersions();

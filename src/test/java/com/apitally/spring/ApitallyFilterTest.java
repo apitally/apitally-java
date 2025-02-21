@@ -8,6 +8,8 @@ import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -35,12 +37,14 @@ import com.apitally.spring.app.TestApplication;
 @ContextConfiguration(classes = { ApitallyFilterTest.TestConfig.class })
 class ApitallyFilterTest {
 
+    private static final Logger logger = LoggerFactory.getLogger(ApitallyFilterTest.class);
+
     @TestConfiguration
     @EnableConfigurationProperties(ApitallyProperties.class)
     static class TestConfig {
         @Bean
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
-            return ApitallyClient.getInstance(properties.getClientId(), properties.getEnv(),
+            return new ApitallyClient(properties.getClientId(), properties.getEnv(),
                     properties.getRequestLogging());
         }
 
@@ -218,6 +222,7 @@ class ApitallyFilterTest {
     @Test
     void testGetVersions() {
         Map<String, String> versions = ApitallyUtils.getVersions();
+        logger.info("Versions: {}", versions);
         assertEquals(3, versions.size());
     }
 

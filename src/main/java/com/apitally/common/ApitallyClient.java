@@ -58,7 +58,6 @@ public class ApitallyClient {
             .retryOn(RetryableHubRequestException.class)
             .build();
 
-    private static ApitallyClient instance;
     private final String clientId;
     private final String env;
     private final UUID instanceUuid;
@@ -77,7 +76,7 @@ public class ApitallyClient {
     private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<SyncData>();
     private final Random random = new Random();
 
-    private ApitallyClient(String clientId, String env, RequestLoggingConfig requestLoggingConfig) {
+    public ApitallyClient(String clientId, String env, RequestLoggingConfig requestLoggingConfig) {
         this.clientId = clientId;
         this.env = env;
         this.instanceUuid = java.util.UUID.randomUUID();
@@ -88,19 +87,6 @@ public class ApitallyClient {
         this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
-    }
-
-    public static synchronized ApitallyClient getInstance(String clientId, String env,
-            RequestLoggingConfig requestLoggingConfig) {
-        if (instance == null) {
-            instance = new ApitallyClient(clientId, env, requestLoggingConfig);
-        } else if (!instance.clientId.equals(clientId) || !instance.env.equals(env)) {
-            throw new IllegalStateException(
-                    String.format(
-                            "ApitallyClient instance already exists with different parameters: Existing (clientId: %s, env: %s), Requested (clientId: %s, env: %s)",
-                            instance.clientId, instance.env, clientId, env));
-        }
-        return instance;
     }
 
     private HttpClient createHttpClient() {
