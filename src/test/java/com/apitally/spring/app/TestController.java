@@ -4,8 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.apitally.spring.ApitallyConsumer;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 
@@ -62,5 +66,11 @@ public class TestController {
     @GetMapping(value = "/throw", produces = "application/json; charset=utf-8")
     public String getError() {
         throw new TestException("test");
+    }
+
+    @ExceptionHandler({ ConstraintViolationException.class })
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException e) {
+        return ResponseEntity.of(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage())).build();
     }
 }
