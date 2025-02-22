@@ -35,8 +35,7 @@ public class RequestLogger {
     private static final int MAX_FILES = 50;
     private static final int MAX_PENDING_WRITES = 100;
     private static final byte[] BODY_TOO_LARGE = "<body too large>".getBytes(StandardCharsets.UTF_8);
-    // private static final byte[] BODY_MASKED =
-    // "<masked>".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] BODY_MASKED = "<masked>".getBytes(StandardCharsets.UTF_8);
     private static final String MASKED = "******";
     private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
     private static final List<String> EXCLUDE_PATH_PATTERNS = Arrays.asList(
@@ -130,7 +129,8 @@ public class RequestLogger {
 
         try {
             String userAgent = findHeader(request.getHeaders(), "user-agent");
-            if (shouldExcludePath(request.getPath()) || shouldExcludeUserAgent(userAgent)) {
+            if (shouldExcludePath(request.getPath()) || shouldExcludeUserAgent(userAgent)
+                    || (config.getCallbacks() != null && config.getCallbacks().shouldExclude(request, response))) {
                 return;
             }
 
@@ -167,6 +167,12 @@ public class RequestLogger {
             } else if (request.getBody() != null) {
                 if (request.getBody().length > MAX_BODY_SIZE) {
                     request.setBody(BODY_TOO_LARGE);
+                } else if (config.getCallbacks() != null) {
+                    byte[] maskedBody = config.getCallbacks().maskRequestBody(request);
+                    request.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
+                    if (request.getBody().length > MAX_BODY_SIZE) {
+                        request.setBody(BODY_TOO_LARGE);
+                    }
                 }
             }
 
@@ -176,6 +182,12 @@ public class RequestLogger {
             } else if (response.getBody() != null) {
                 if (response.getBody().length > MAX_BODY_SIZE) {
                     response.setBody(BODY_TOO_LARGE);
+                } else if (config.getCallbacks() != null) {
+                    byte[] maskedBody = config.getCallbacks().maskResponseBody(request, response);
+                    response.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
+                    if (response.getBody().length > MAX_BODY_SIZE) {
+                        response.setBody(BODY_TOO_LARGE);
+                    }
                 }
             }
 

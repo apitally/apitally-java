@@ -1,11 +1,16 @@
 package com.apitally.common;
 
+import java.io.BufferedReader;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 public class TempGzipFile implements AutoCloseable {
@@ -65,5 +70,13 @@ public class TempGzipFile implements AutoCloseable {
 
     public InputStream getInputStream() throws IOException {
         return Files.newInputStream(path);
+    }
+
+    public List<String> readDecompressedLines() throws IOException {
+        try (InputStream inputStream = getInputStream();
+                GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream))) {
+            return reader.lines().collect(Collectors.toList());
+        }
     }
 }
