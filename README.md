@@ -64,6 +64,7 @@ Add the following dependency to your `pom.xml` file:
 <dependency>
   <groupId>com.apitally</groupId>
   <artifactId>apitally-java</artifactId>
+  <version>[0.1.0,)</version>
 </dependency>
 ```
 
