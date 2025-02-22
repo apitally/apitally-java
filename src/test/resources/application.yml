@@ -8,6 +8,7 @@ apitally:
     request-body-included: true
     response-body-included: true
     response-headers-included: true
+    callbacks-class: com.apitally.spring.app.RequestLoggingCallbacks
 
 spring:
   main:

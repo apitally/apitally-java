@@ -13,6 +13,7 @@ public class RequestLoggingConfig {
     private List<String> queryParamMaskPatterns = new ArrayList<>();
     private List<String> headerMaskPatterns = new ArrayList<>();
     private List<String> pathExcludePatterns = new ArrayList<>();
+    private RequestLoggingCallbacks callbacks;
 
     public boolean isEnabled() {
         return enabled;
@@ -84,5 +85,13 @@ public class RequestLoggingConfig {
 
     public void setPathExcludePatterns(List<String> pathExcludePatterns) {
         this.pathExcludePatterns = pathExcludePatterns;
+    }
+
+    public RequestLoggingCallbacks getCallbacks() {
+        return callbacks;
+    }
+
+    protected void setCallbacks(RequestLoggingCallbacks callbacks) {
+        this.callbacks = callbacks;
     }
 }
