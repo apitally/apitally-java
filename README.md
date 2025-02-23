@@ -25,7 +25,8 @@
 This client library for Apitally currently supports the following Java web
 frameworks:
 
-- [Spring Boot](https://docs.apitally.io/frameworks/spring-boot)
+- [Spring Boot](https://docs.apitally.io/frameworks/spring-boot) (≥ 3.0, Java
+  17+)
 
 Learn more about Apitally on our 🌎 [website](https://apitally.io) or check out
 the 📚 [documentation](https://docs.apitally.io).
