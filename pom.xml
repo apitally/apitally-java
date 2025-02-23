@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>io.apitally</groupId>
-    <artifactId>apitally-java</artifactId>
+    <artifactId>apitally</artifactId>
     <version>0.1.0</version>
     <packaging>jar</packaging>
     <name>Apitally Java Client</name>
