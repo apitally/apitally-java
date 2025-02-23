@@ -2,4 +2,4 @@ check:
 	mvn clean compile
 
 test:
-	mvn clean test
+	mvn clean test -P coverage

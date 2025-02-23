@@ -32,4 +32,4 @@ jobs:
           gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
           passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
       - name: Build and publish
-        run: mvn -B deploy
+        run: mvn -B deploy -P release
