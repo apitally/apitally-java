@@ -19,7 +19,6 @@ import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -73,7 +72,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
             try {
                 // Register consumer and get consumer identifier
                 final Consumer consumer = ConsumerRegistry
-                        .consumerFromStringOrObject(request.getAttribute("apitallyConsumer"));
+                        .consumerFromObject(request.getAttribute("apitallyConsumer"));
                 client.consumerRegistry.addOrUpdateConsumer(consumer);
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 

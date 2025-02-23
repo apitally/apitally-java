@@ -1,6 +1,7 @@
 package io.apitally.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.util.List;
 
@@ -19,8 +20,7 @@ public class ConsumerRegistryTest {
 
     @Test
     void testAddOrUpdateConsumer() {
-        Consumer consumer;
-        consumer = ConsumerRegistry.consumerFromStringOrObject("test");
+        Consumer consumer = ConsumerRegistry.consumerFromObject("test");
         consumerRegistry.addOrUpdateConsumer(consumer);
         consumer = new Consumer("test", "Test 1", "Group 1");
         consumerRegistry.addOrUpdateConsumer(consumer);
@@ -39,5 +39,30 @@ public class ConsumerRegistryTest {
         consumerRegistry.addOrUpdateConsumer(consumer);
         consumers = consumerRegistry.getAndResetConsumers();
         assertEquals(0, consumers.size());
+    }
+
+    @Test
+    void testconsumerFromObject() {
+        Consumer consumer = ConsumerRegistry.consumerFromObject("test");
+        assertEquals("test", consumer.getIdentifier());
+        assertNull(consumer.getName());
+        assertNull(consumer.getGroup());
+
+        consumer = ConsumerRegistry.consumerFromObject(new Consumer("test", "Test 1", "Group 1"));
+        assertEquals("test", consumer.getIdentifier());
+        assertEquals("Test 1", consumer.getName());
+        assertEquals("Group 1", consumer.getGroup());
+
+        consumer = ConsumerRegistry.consumerFromObject(123);
+        assertEquals("123", consumer.getIdentifier());
+
+        consumer = ConsumerRegistry.consumerFromObject(1.23);
+        assertNull(consumer);
+
+        consumer = ConsumerRegistry.consumerFromObject("");
+        assertNull(consumer);
+
+        consumer = ConsumerRegistry.consumerFromObject(null);
+        assertNull(consumer);
     }
 }

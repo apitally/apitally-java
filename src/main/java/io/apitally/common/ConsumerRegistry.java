@@ -18,15 +18,18 @@ public class ConsumerRegistry {
         this.updated = new HashSet<>();
     }
 
-    public static Consumer consumerFromStringOrObject(Object consumer) {
+    public static Consumer consumerFromObject(Object consumer) {
         if (consumer == null) {
             return null;
         }
-        if (consumer instanceof String) {
+        if (consumer instanceof Consumer c) {
+            return c.getIdentifier().trim().isEmpty() ? null : c;
+        } else if (consumer instanceof String) {
             String identifier = (String) consumer;
             return identifier.trim().isEmpty() ? null : new Consumer(identifier);
-        } else if (consumer instanceof Consumer c) {
-            return c.getIdentifier().trim().isEmpty() ? null : c;
+        } else if (consumer instanceof Integer || consumer instanceof Long) {
+            String identifier = String.valueOf(consumer);
+            return new Consumer(identifier);
         }
         return null;
     }
