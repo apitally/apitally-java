@@ -1,4 +1,4 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -13,12 +13,12 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
-import com.apitally.common.ApitallyClient;
-import com.apitally.common.ConsumerRegistry;
-import com.apitally.common.dto.Consumer;
-import com.apitally.common.dto.Header;
-import com.apitally.common.dto.Request;
-import com.apitally.common.dto.Response;
+import io.apitally.common.ApitallyClient;
+import io.apitally.common.ConsumerRegistry;
+import io.apitally.common.dto.Consumer;
+import io.apitally.common.dto.Header;
+import io.apitally.common.dto.Request;
+import io.apitally.common.dto.Response;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

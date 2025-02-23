@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.io.InputStream;
 import java.net.URI;
@@ -23,9 +23,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.retry.support.RetryTemplate;
 
-import com.apitally.common.dto.Path;
-import com.apitally.common.dto.StartupData;
-import com.apitally.common.dto.SyncData;
+import io.apitally.common.dto.Path;
+import io.apitally.common.dto.StartupData;
+import io.apitally.common.dto.SyncData;
 
 public class ApitallyClient {
     public static class RetryableHubRequestException extends Exception {

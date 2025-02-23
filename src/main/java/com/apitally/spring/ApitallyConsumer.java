@@ -1,6 +1,6 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
-import com.apitally.common.dto.Consumer;
+import io.apitally.common.dto.Consumer;
 
 public final class ApitallyConsumer extends Consumer {
     public ApitallyConsumer(String identifier) {

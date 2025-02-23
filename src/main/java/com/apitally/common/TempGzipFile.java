@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.io.BufferedReader;
 import java.io.FileOutputStream;

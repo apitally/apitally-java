@@ -1,4 +1,4 @@
-package com.apitally.spring.app;
+package io.apitally.spring.app;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.apitally.spring.ApitallyConsumer;
+import io.apitally.spring.ApitallyConsumer;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;

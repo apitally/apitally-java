@@ -1,11 +1,11 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.apitally.common.dto.Requests;
+import io.apitally.common.dto.Requests;
 
 public class RequestCounter {
     private final Map<String, Integer> requestCounts;

@@ -1,9 +1,9 @@
-package com.apitally.spring.app;
+package io.apitally.spring.app;
 
-import com.apitally.common.dto.Request;
-import com.apitally.common.dto.Response;
+import io.apitally.common.dto.Request;
+import io.apitally.common.dto.Response;
 
-public class RequestLoggingCallbacks implements com.apitally.common.RequestLoggingCallbacks {
+public class RequestLoggingCallbacks implements io.apitally.common.RequestLoggingCallbacks {
 
     @Override
     public boolean shouldExclude(Request request, Response response) {

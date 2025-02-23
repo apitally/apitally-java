@@ -1,4 +1,4 @@
-package com.apitally.common.dto;
+package io.apitally.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 

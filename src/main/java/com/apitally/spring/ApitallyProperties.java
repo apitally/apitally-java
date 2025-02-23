@@ -1,11 +1,11 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import com.apitally.common.RequestLoggingCallbacks;
+import io.apitally.common.RequestLoggingCallbacks;
 
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -46,7 +46,7 @@ public class ApitallyProperties {
         this.requestLogging = requestLogging;
     }
 
-    public static class RequestLoggingConfig extends com.apitally.common.RequestLoggingConfig {
+    public static class RequestLoggingConfig extends io.apitally.common.RequestLoggingConfig {
         @Pattern(regexp = "^[\\w.]+$", message = "Callbacks class must be a valid class name")
         private String callbacksClass;
 

@@ -1,4 +1,4 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import java.util.List;
 import java.util.Map;
@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import com.apitally.common.ApitallyClient;
-import com.apitally.common.dto.Path;
+import io.apitally.common.ApitallyClient;
+import io.apitally.common.dto.Path;
 
 @Configuration
 @EnableConfigurationProperties(ApitallyProperties.class)

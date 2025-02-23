@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.apitally.common.dto.ServerError;
-import com.apitally.common.dto.ServerErrors;
+import io.apitally.common.dto.ServerError;
+import io.apitally.common.dto.ServerErrors;
 
 public class ServerErrorCounter {
     private final Map<String, Integer> errorCounts;

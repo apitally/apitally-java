@@ -1,4 +1,4 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import org.springframework.core.Ordered;
 import org.springframework.lang.NonNull;

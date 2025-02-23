@@ -1,4 +1,4 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -25,13 +25,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import com.apitally.common.ApitallyClient;
-import com.apitally.common.dto.Consumer;
-import com.apitally.common.dto.Path;
-import com.apitally.common.dto.Requests;
-import com.apitally.common.dto.ServerErrors;
-import com.apitally.common.dto.ValidationErrors;
-import com.apitally.spring.app.TestApplication;
+import io.apitally.common.ApitallyClient;
+import io.apitally.common.dto.Consumer;
+import io.apitally.common.dto.Path;
+import io.apitally.common.dto.Requests;
+import io.apitally.common.dto.ServerErrors;
+import io.apitally.common.dto.ValidationErrors;
+import io.apitally.spring.app.TestApplication;
 
 @SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = { ApitallyFilterTest.TestConfig.class })

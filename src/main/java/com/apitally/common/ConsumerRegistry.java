@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.apitally.common.dto.Consumer;
+import io.apitally.common.dto.Consumer;
 
 public class ConsumerRegistry {
     private final Map<String, Consumer> consumers;

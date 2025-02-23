@@ -1,7 +1,7 @@
-package com.apitally.common;
+package io.apitally.common;
 
-import com.apitally.common.dto.Request;
-import com.apitally.common.dto.Response;
+import io.apitally.common.dto.Request;
+import io.apitally.common.dto.Response;
 
 public interface RequestLoggingCallbacks {
     /**

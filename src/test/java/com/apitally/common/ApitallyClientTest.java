@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,10 +19,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
-import com.apitally.common.dto.Header;
-import com.apitally.common.dto.Path;
-import com.apitally.common.dto.Request;
-import com.apitally.common.dto.Response;
+import io.apitally.common.dto.Header;
+import io.apitally.common.dto.Path;
+import io.apitally.common.dto.Request;
+import io.apitally.common.dto.Response;
 
 class ApitallyClientTest {
 

@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.util.ArrayList;
 import java.util.List;

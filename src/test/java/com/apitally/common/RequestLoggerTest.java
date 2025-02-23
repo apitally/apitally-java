@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -14,9 +14,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.apitally.common.dto.Header;
-import com.apitally.common.dto.Request;
-import com.apitally.common.dto.Response;
+import io.apitally.common.dto.Header;
+import io.apitally.common.dto.Request;
+import io.apitally.common.dto.Response;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

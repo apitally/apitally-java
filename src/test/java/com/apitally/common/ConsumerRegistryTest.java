@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -7,7 +7,7 @@ import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.apitally.common.dto.Consumer;
+import io.apitally.common.dto.Consumer;
 
 public class ConsumerRegistryTest {
     private ConsumerRegistry consumerRegistry;

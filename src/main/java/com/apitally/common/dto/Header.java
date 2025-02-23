@@ -1,4 +1,4 @@
-package com.apitally.common.dto;
+package io.apitally.common.dto;
 
 public class Header {
     private final String name;

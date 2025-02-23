@@ -62,7 +62,7 @@ Add the following dependency to your `pom.xml` file:
 
 ```xml
 <dependency>
-  <groupId>com.apitally</groupId>
+  <groupId>io.apitally</groupId>
   <artifactId>apitally-java</artifactId>
   <version>[0.1.0,)</version>
 </dependency>
@@ -77,7 +77,7 @@ annotation.
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-import com.apitally.spring.UseApitally;
+import io.apitally.spring.UseApitally;
 
 @UseApitally
 @SpringBootApplication

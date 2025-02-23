@@ -1,4 +1,4 @@
-package com.apitally.common;
+package io.apitally.common;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.apitally.common.dto.ValidationError;
-import com.apitally.common.dto.ValidationErrors;
+import io.apitally.common.dto.ValidationError;
+import io.apitally.common.dto.ValidationErrors;
 
 public class ValidationErrorCounter {
     private final Map<String, Integer> errorCounts;

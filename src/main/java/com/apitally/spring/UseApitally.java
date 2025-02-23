@@ -1,4 +1,4 @@
-package com.apitally.spring;
+package io.apitally.spring;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.ElementType;

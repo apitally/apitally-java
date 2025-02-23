@@ -1,4 +1,4 @@
-package com.apitally.common.dto;
+package io.apitally.common.dto;
 
 public class Request extends RequestResponseBase {
     private final double timestamp;

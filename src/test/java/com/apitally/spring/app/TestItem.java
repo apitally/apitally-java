@@ -1,4 +1,4 @@
-package com.apitally.spring.app;
+package io.apitally.spring.app;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;

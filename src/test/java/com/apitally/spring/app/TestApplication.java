@@ -1,4 +1,4 @@
-package com.apitally.spring.app;
+package io.apitally.spring.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

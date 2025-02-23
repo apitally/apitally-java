@@ -4,7 +4,7 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.apitally</groupId>
+    <groupId>io.apitally</groupId>
     <artifactId>apitally-java</artifactId>
     <version>0.1.0</version>
     <packaging>jar</packaging>
@@ -30,6 +30,12 @@
         <name>Apitally</name>
         <url>https://apitally.io</url>
     </organization>
+
+    <scm>
+        <connection>scm:git:git://github.com/apitally/apitally-java.git</connection>
+        <developerConnection>scm:git:ssh://github.com:apitally/apitally-java.git</developerConnection>
+        <url>https://github.com/apitally/apitally-java</url>
+    </scm>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -138,6 +144,17 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <version>0.7.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
+                    <waitUntil>published</waitUntil>
+                </configuration>
             </plugin>
         </plugins>
     </build>
