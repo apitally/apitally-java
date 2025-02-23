@@ -18,13 +18,18 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: maven
+      - name: Set version from tag
+        run: |
+          TAG=${{ github.event.release.tag_name }}
+          mvn versions:set -DnewVersion=${TAG#v}
       - name: Create Maven settings.xml
         uses: s4u/maven-settings-action@v3.1.0
         with:
           servers: '[{"id": "central", "username": "${{ secrets.MAVEN_CENTRAL_USERNAME }}", "password": "${{ secrets.MAVEN_CENTRAL_PASSWORD }}"}]'
-      - name: Set version from tag
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          mvn versions:set -DnewVersion=${VERSION}
+      - name: Import GPG key
+        uses: crazy-max/ghaction-import-gpg@v6
+        with:
+          gpg_private_key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
+          passphrase: ${{ secrets.MAVEN_GPG_PASSPHRASE }}
       - name: Build and publish
         run: mvn -B deploy
