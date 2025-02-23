@@ -8,8 +8,8 @@
     <artifactId>apitally</artifactId>
     <version>0.1.0</version>
     <packaging>jar</packaging>
-    <name>Apitally Java Client</name>
-    <description>Apitally client library for Java</description>
+    <name>Apitally</name>
+    <description>Client library for Apitally, a simple API monitoring and analytics tool for REST APIs built with Spring Boot.</description>
     <url>https://github.com/apitally/apitally-java</url>
 
     <licenses>
