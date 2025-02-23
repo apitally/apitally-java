@@ -8,6 +8,12 @@ import java.lang.annotation.Target;
 
 import org.springframework.context.annotation.Import;
 
+/**
+ * Enables Apitally integration for a Spring Boot application.
+ * Registers a filter that captures requests and responses, and creates an
+ * ApitallyClient instance that handles background synchronization with
+ * Apitally.
+ */
 @Target({ ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 @Import({ ApitallyAutoConfiguration.class })
