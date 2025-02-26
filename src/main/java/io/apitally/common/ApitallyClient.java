@@ -117,7 +117,6 @@ public class ApitallyClient {
         if (startupData == null) {
             return;
         }
-        startupDataSent = true; // Prevent duplicate sending in sync()
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(getHubUrl("startup"))
                 .header("Content-Type", "application/json")

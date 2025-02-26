@@ -78,11 +78,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
                 // Add request to counter
                 final long requestContentLength = request.getContentLengthLong();
-                final long requestSize = requestContentLength >= 0 ? requestContentLength : requestBody.length;
+                final long requestSize = requestContentLength >= 0 ? requestContentLength
+                        : cachingRequest != null ? requestBody.length : -1;
                 final long responseContentLength = getResponseContentLength(response);
                 final long responseSize = responseContentLength >= 0
                         ? responseContentLength
-                        : responseBody.length;
+                        : (cachingResponse != null ? responseBody.length : -1);
                 client.requestCounter
                         .addRequest(consumerIdentifier, request.getMethod(), path, response.getStatus(),
                                 responseTimeInMillis,
