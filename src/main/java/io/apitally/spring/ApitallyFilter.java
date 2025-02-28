@@ -22,8 +22,11 @@ import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 
@@ -58,6 +61,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
         ContentCachingResponseWrapper cachingResponse = shouldCacheResponse
                 ? new ContentCachingResponseWrapper(response)
                 : null;
+        CountingResponseWrapper countingResponse = cachingResponse == null
+                ? new CountingResponseWrapper(response)
+                : null;
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
@@ -65,7 +71,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
         try {
             filterChain.doFilter(
                     cachingRequest != null ? cachingRequest : request,
-                    cachingResponse != null ? cachingResponse : response);
+                    cachingResponse != null ? cachingResponse : countingResponse);
         } catch (Exception e) {
             exception = e;
             throw e;
@@ -92,9 +98,11 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 final long requestSize = requestContentLength >= 0 ? requestContentLength
                         : cachingRequest != null ? requestBody.length : -1;
                 final long responseContentLength = getResponseContentLength(response);
-                final long responseSize = responseContentLength >= 0
-                        ? responseContentLength
-                        : (cachingResponse != null ? responseBody.length : -1);
+                final long responseSize = responseContentLength >= 0 ? responseContentLength
+                        : (cachingResponse != null ? responseBody.length
+                                : countingResponse != null
+                                        ? countingResponse.getByteCount()
+                                        : -1);
                 client.requestCounter
                         .addRequest(consumerIdentifier, request.getMethod(), path, response.getStatus(),
                                 responseTimeInMillis,
@@ -154,7 +162,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 logger.error("Error in Apitally filter", e);
             }
         }
-
     }
 
     private static long getResponseContentLength(HttpServletResponse response) {
@@ -166,5 +173,77 @@ public class ApitallyFilter extends OncePerRequestFilter {
             }
         }
         return -1L;
+    }
+
+    private static class CountingResponseWrapper extends HttpServletResponseWrapper {
+        private CountingServletOutputStream countingStream;
+
+        public CountingResponseWrapper(HttpServletResponse response) {
+            super(response);
+        }
+
+        @Override
+        public ServletOutputStream getOutputStream() throws IOException {
+            if (countingStream == null) {
+                countingStream = new CountingServletOutputStream(super.getOutputStream());
+            }
+            return countingStream;
+        }
+
+        public long getByteCount() {
+            return countingStream != null ? countingStream.getByteCount() : 0;
+        }
+    }
+
+    private static class CountingServletOutputStream extends ServletOutputStream {
+        private final ServletOutputStream outputStream;
+        private long byteCount;
+
+        public CountingServletOutputStream(ServletOutputStream outputStream) {
+            this.outputStream = outputStream;
+            this.byteCount = 0;
+        }
+
+        @Override
+        public boolean isReady() {
+            return outputStream.isReady();
+        }
+
+        @Override
+        public void setWriteListener(WriteListener writeListener) {
+            outputStream.setWriteListener(writeListener);
+        }
+
+        @Override
+        public void write(int b) throws IOException {
+            outputStream.write(b);
+            byteCount++;
+        }
+
+        @Override
+        public void write(byte[] b) throws IOException {
+            outputStream.write(b);
+            byteCount += b.length;
+        }
+
+        @Override
+        public void write(byte[] b, int off, int len) throws IOException {
+            outputStream.write(b, off, len);
+            byteCount += len;
+        }
+
+        @Override
+        public void flush() throws IOException {
+            outputStream.flush();
+        }
+
+        @Override
+        public void close() throws IOException {
+            outputStream.close();
+        }
+
+        public long getByteCount() {
+            return byteCount;
+        }
     }
 }

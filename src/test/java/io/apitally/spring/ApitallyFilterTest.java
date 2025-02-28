@@ -77,10 +77,12 @@ class ApitallyFilterTest {
         apitallyClient.validationErrorCounter.getAndResetValidationErrors();
         apitallyClient.serverErrorCounter.getAndResetServerErrors();
         apitallyClient.consumerRegistry.getAndResetConsumers();
+        apitallyClient.requestLogger.getConfig().setEnabled(true);
     }
 
     @Test
     void testRequestCounter() {
+        apitallyClient.requestLogger.getConfig().setEnabled(false);
         ResponseEntity<String> response;
 
         response = restTemplate.getForEntity("/items", String.class);
@@ -95,13 +97,16 @@ class ApitallyFilterTest {
         response = restTemplate.getForEntity("/items/2", String.class);
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
+        response = restTemplate.getForEntity("/stream", String.class);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
         response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
         delay(100);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
-        assertEquals(4, requests.size());
+        assertEquals(5, requests.size());
         assertTrue(requests.stream()
                 .anyMatch(r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items")
@@ -117,6 +122,12 @@ class ApitallyFilterTest {
                         && r.getPath().equals("/items/{id}")
                         && r.getStatusCode() == 400
                         && r.getRequestCount() == 1));
+        assertTrue(requests.stream().anyMatch(
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/stream")
+                        && r.getStatusCode() == 200
+                        && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() == 14));
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
