@@ -106,35 +106,42 @@ class ApitallyFilterTest {
         delay(100);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
-        assertEquals(5, requests.size());
+        assertEquals(5, requests.size(), "5 requests counted");
         assertTrue(requests.stream()
                 .anyMatch(r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items")
                         && r.getStatusCode() == 200
-                        && r.getRequestCount() == 1));
+                        && r.getRequestCount() == 1),
+                "GET /items request counted correctly");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items/{id}")
                         && r.getStatusCode() == 200
-                        && r.getRequestCount() == 2));
+                        && r.getRequestCount() == 2),
+                "GET /items/{id} requests counted correctly");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items/{id}")
                         && r.getStatusCode() == 400
-                        && r.getRequestCount() == 1));
+                        && r.getRequestCount() == 1),
+                "GET /items/0 request counted correctly");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/stream")
                         && r.getStatusCode() == 200
                         && r.getRequestCount() == 1
-                        && r.getResponseSizeSum() == 14));
+                        && r.getResponseSizeSum() == 14),
+                "GET /stream request counted correctly");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
-                        && r.getStatusCode() == 500));
+                        && r.getStatusCode() == 500
+                        && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() == 0),
+                "GET /throw request counted correctly");
 
         requests = apitallyClient.requestCounter.getAndResetRequests();
-        assertEquals(0, requests.size());
+        assertEquals(0, requests.size(), "No requests counted after reset");
     }
 
     @Test
