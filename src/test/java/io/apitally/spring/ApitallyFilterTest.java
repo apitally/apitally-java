@@ -103,7 +103,7 @@ class ApitallyFilterTest {
         response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
-        delay(200);
+        delay(500);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(5, requests.size(), "5 requests counted");
