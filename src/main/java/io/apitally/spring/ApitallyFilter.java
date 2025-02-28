@@ -190,6 +190,14 @@ public class ApitallyFilter extends OncePerRequestFilter {
             return countingStream;
         }
 
+        @Override
+        public void flushBuffer() throws IOException {
+            if (countingStream != null) {
+                countingStream.flush();
+            }
+            super.flushBuffer();
+        }
+
         public long getByteCount() {
             return countingStream != null ? countingStream.getByteCount() : 0;
         }
