@@ -136,8 +136,15 @@ class ApitallyFilterTest {
                         && r.getPath().equals("/stream")
                         && r.getStatusCode() == 200
                         && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() > 0),
+                "GET /stream request counted correctly with response size > 0");
+        assertTrue(requests.stream().anyMatch(
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/stream")
+                        && r.getStatusCode() == 200
+                        && r.getRequestCount() == 1
                         && r.getResponseSizeSum() == 14),
-                "GET /stream request counted correctly with response size");
+                "GET /stream request counted correctly with response size = 14");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
