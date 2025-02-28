@@ -77,7 +77,7 @@ class ApitallyClientTest {
         clientSpy.setStartupData(paths, versions, "java:test");
         clientSpy.startSync();
 
-        delay(200);
+        delay(100);
 
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
         verify(clientSpy, times(3)).sendHubRequest(requestCaptor.capture());

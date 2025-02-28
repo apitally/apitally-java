@@ -88,8 +88,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
             try {
                 // Register consumer and get consumer identifier
-                final Consumer consumer = ConsumerRegistry
-                        .consumerFromObject(request.getAttribute("apitallyConsumer"));
+                final Consumer consumer = ConsumerRegistry.consumerFromObject(request.getAttribute("apitallyConsumer"));
                 client.consumerRegistry.addOrUpdateConsumer(consumer);
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 
@@ -99,14 +98,11 @@ public class ApitallyFilter extends OncePerRequestFilter {
                         : cachingRequest != null ? requestBody.length : -1;
                 final long responseContentLength = getResponseContentLength(response);
                 final long responseSize = responseContentLength >= 0 ? responseContentLength
-                        : (cachingResponse != null ? responseBody.length
-                                : countingResponse != null
-                                        ? countingResponse.getByteCount()
-                                        : -1);
-                client.requestCounter
-                        .addRequest(consumerIdentifier, request.getMethod(), path, response.getStatus(),
-                                responseTimeInMillis,
-                                requestSize, responseSize);
+                        : cachingResponse != null ? responseBody.length
+                                : countingResponse != null ? countingResponse.getByteCount() : -1;
+                client.requestCounter.addRequest(
+                        consumerIdentifier, request.getMethod(), path, response.getStatus(), responseTimeInMillis,
+                        requestSize, responseSize);
 
                 // Log request
                 if (client.requestLogger.isEnabled()) {
@@ -120,8 +116,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
                             .toArray(Header[]::new);
 
                     client.requestLogger.logRequest(
-                            new Request(startTime / 1000.0, consumerIdentifier, request.getMethod(),
-                                    path,
+                            new Request(startTime / 1000.0, consumerIdentifier, request.getMethod(), path,
                                     request.getRequestURL().toString(), requestHeaders, requestSize, requestBody),
                             new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
                                     responseSize, responseBody));
@@ -132,16 +127,17 @@ public class ApitallyFilter extends OncePerRequestFilter {
                     Object capturedException = request.getAttribute("apitallyCapturedException");
                     if (capturedException instanceof ConstraintViolationException e) {
                         for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
-                            client.validationErrorCounter.addValidationError(consumerIdentifier, request.getMethod(),
-                                    path, violation.getPropertyPath().toString(), violation.getMessage(),
+                            client.validationErrorCounter.addValidationError(
+                                    consumerIdentifier, request.getMethod(), path,
+                                    violation.getPropertyPath().toString(), violation.getMessage(),
                                     violation.getConstraintDescriptor().getAnnotation().annotationType()
                                             .getSimpleName());
                         }
                     } else if (capturedException instanceof MethodArgumentNotValidException e) {
                         for (FieldError error : e.getBindingResult().getFieldErrors()) {
-                            client.validationErrorCounter.addValidationError(consumerIdentifier, request.getMethod(),
-                                    path, error.getObjectName() + "." + error.getField(),
-                                    error.getDefaultMessage(),
+                            client.validationErrorCounter.addValidationError(
+                                    consumerIdentifier, request.getMethod(), path,
+                                    error.getObjectName() + "." + error.getField(), error.getDefaultMessage(),
                                     error.getCode());
                         }
                     }
@@ -154,8 +150,8 @@ public class ApitallyFilter extends OncePerRequestFilter {
                         exception = (Exception) capturedException;
                     }
                     if (exception != null) {
-                        client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path,
-                                exception);
+                        client.serverErrorCounter.addServerError(
+                                consumerIdentifier, request.getMethod(), path, exception);
                     }
                 }
             } catch (Exception e) {

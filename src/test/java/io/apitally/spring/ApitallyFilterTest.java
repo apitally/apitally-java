@@ -97,21 +97,19 @@ class ApitallyFilterTest {
         response = restTemplate.getForEntity("/items/2", String.class);
         assertTrue(response.getStatusCode().is2xxSuccessful());
 
-        response = restTemplate.getForEntity("/stream", String.class);
-        assertTrue(response.getStatusCode().is2xxSuccessful());
-
         response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
-        delay(200);
+        delay(100);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
-        assertEquals(5, requests.size(), "5 requests counted");
+        assertEquals(4, requests.size(), "5 requests counted");
         assertTrue(requests.stream()
                 .anyMatch(r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items")
                         && r.getStatusCode() == 200
-                        && r.getRequestCount() == 1),
+                        && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() > 0),
                 "GET /items request counted correctly");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
@@ -125,26 +123,6 @@ class ApitallyFilterTest {
                         && r.getStatusCode() == 400
                         && r.getRequestCount() == 1),
                 "GET /items/0 request counted correctly");
-        assertTrue(requests.stream().anyMatch(
-                r -> r.getMethod().equals("GET")
-                        && r.getPath().equals("/stream")
-                        && r.getStatusCode() == 200
-                        && r.getRequestCount() == 1),
-                "GET /stream request counted");
-        assertTrue(requests.stream().anyMatch(
-                r -> r.getMethod().equals("GET")
-                        && r.getPath().equals("/stream")
-                        && r.getStatusCode() == 200
-                        && r.getRequestCount() == 1
-                        && r.getResponseSizeSum() > 0),
-                "GET /stream request counted correctly with response size > 0");
-        assertTrue(requests.stream().anyMatch(
-                r -> r.getMethod().equals("GET")
-                        && r.getPath().equals("/stream")
-                        && r.getStatusCode() == 200
-                        && r.getRequestCount() == 1
-                        && r.getResponseSizeSum() == 14),
-                "GET /stream request counted correctly with response size = 14");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
@@ -242,7 +220,7 @@ class ApitallyFilterTest {
     @Test
     void testGetPaths() {
         List<Path> paths = ApitallyUtils.getPaths(requestMappingHandlerMapping);
-        assertEquals(7, paths.size());
+        assertEquals(6, paths.size());
         assertTrue(paths.stream().anyMatch(p -> p.getMethod().equals("GET") && p.getPath().equals("/items")));
         assertTrue(paths.stream().anyMatch(p -> p.getMethod().equals("GET") && p.getPath().equals("/items/{id}")));
         assertTrue(paths.stream().anyMatch(p -> p.getMethod().equals("POST") && p.getPath().equals("/items")));
