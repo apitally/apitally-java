@@ -21,11 +21,12 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 public class RequestLogger {
     private static final Logger logger = LoggerFactory.getLogger(RequestLogger.class);
@@ -37,7 +38,7 @@ public class RequestLogger {
     private static final byte[] BODY_TOO_LARGE = "<body too large>".getBytes(StandardCharsets.UTF_8);
     private static final byte[] BODY_MASKED = "<masked>".getBytes(StandardCharsets.UTF_8);
     private static final String MASKED = "******";
-    private static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
+    public static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
     private static final List<String> EXCLUDE_PATH_PATTERNS = Arrays.asList(
             "/_?healthz?$",
             "/_?health[_-]?checks?$",

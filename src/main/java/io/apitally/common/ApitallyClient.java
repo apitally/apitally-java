@@ -66,6 +66,7 @@ public class ApitallyClient {
     private ScheduledFuture<?> syncTask;
     private StartupData startupData;
     private boolean startupDataSent = false;
+    private boolean enabled = true;
 
     public final RequestCounter requestCounter;
     public final RequestLogger requestLogger;
@@ -87,6 +88,10 @@ public class ApitallyClient {
         this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
+    }
+
+    public boolean isEnabled() {
+        return enabled;
     }
 
     private HttpClient createHttpClient() {
@@ -193,7 +198,10 @@ public class ApitallyClient {
                         .POST(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream))
                         .build();
                 HubRequestStatus status = sendHubRequest(request).join();
-                if (status == HubRequestStatus.RETRYABLE_ERROR) {
+                if (status == HubRequestStatus.PAYMENT_REQUIRED) {
+                    requestLogger.clear();
+                    requestLogger.setSuspendUntil(System.currentTimeMillis() + (3600 * 1000L));
+                } else if (status == HubRequestStatus.RETRYABLE_ERROR) {
                     requestLogger.retryFileLater(logFile);
                     break;
                 } else {
@@ -219,22 +227,11 @@ public class ApitallyClient {
                         if (response.statusCode() >= 200 && response.statusCode() < 300) {
                             return HubRequestStatus.OK;
                         } else if (response.statusCode() == 402) {
-                            // 402 is only returned by the log endpoint, meaning request logging is not
-                            // allowed for this client
-                            Optional<String> retryAfter = response.headers().firstValue("Retry-After");
-                            if (retryAfter.isPresent()) {
-                                try {
-                                    int retryAfterSeconds = Integer.parseInt(retryAfter.get());
-                                    requestLogger
-                                            .setSuspendUntil(System.currentTimeMillis() + (retryAfterSeconds * 1000L));
-                                } catch (NumberFormatException e) {
-                                    // Ignore invalid Retry-After header
-                                }
-                            }
-                            requestLogger.clear();
                             return HubRequestStatus.PAYMENT_REQUIRED;
                         } else if (response.statusCode() == 404) {
+                            enabled = false;
                             stopSync();
+                            requestLogger.close();
                             logger.error("Invalid Apitally client ID: {}", clientId);
                             return HubRequestStatus.INVALID_CLIENT_ID;
                         } else if (response.statusCode() == 422) {
@@ -304,6 +301,7 @@ public class ApitallyClient {
 
     public void shutdown() {
         try {
+            enabled = false;
             boolean syncRunning = syncTask != null;
             stopSync();
             if (syncRunning) {

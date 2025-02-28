@@ -15,6 +15,7 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
+import io.apitally.common.RequestLogger;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.Request;
@@ -38,23 +39,33 @@ public class ApitallyFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        final boolean isContentCachingEnabled = client.requestLogger.getConfig().isEnabled()
-                && (client.requestLogger.getConfig().isRequestBodyIncluded() || client.requestLogger.getConfig()
-                        .isResponseBodyIncluded());
+        if (!client.isEnabled()) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        String requestContentType = request.getContentType();
+        final boolean shouldCacheRequest = client.requestLogger.getConfig().isEnabled()
+                && client.requestLogger.getConfig().isRequestBodyIncluded()
+                && requestContentType != null
+                && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
+                        .anyMatch(allowedContentType -> requestContentType.startsWith(allowedContentType));
+        final boolean shouldCacheResponse = client.requestLogger.getConfig().isEnabled()
+                && client.requestLogger.getConfig().isResponseBodyIncluded();
+        ContentCachingRequestWrapper cachingRequest = shouldCacheRequest
+                ? new ContentCachingRequestWrapper(request)
+                : null;
+        ContentCachingResponseWrapper cachingResponse = shouldCacheResponse
+                ? new ContentCachingResponseWrapper(response)
+                : null;
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
-        ContentCachingRequestWrapper cachingRequest = null;
-        ContentCachingResponseWrapper cachingResponse = null;
 
         try {
-            if (isContentCachingEnabled) {
-                cachingRequest = new ContentCachingRequestWrapper(request);
-                cachingResponse = new ContentCachingResponseWrapper(response);
-                filterChain.doFilter(cachingRequest, cachingResponse);
-            } else {
-                filterChain.doFilter(request, response);
-            }
+            filterChain.doFilter(
+                    cachingRequest != null ? cachingRequest : request,
+                    cachingResponse != null ? cachingResponse : response);
         } catch (Exception e) {
             exception = e;
             throw e;
