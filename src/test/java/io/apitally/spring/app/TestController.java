@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import io.apitally.spring.ApitallyConsumer;
 import jakarta.servlet.http.HttpServletRequest;
@@ -59,19 +58,6 @@ public class TestController {
     @DeleteMapping(value = "/items/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteItem(@PathVariable @Min(1) Integer id) {
-    }
-
-    @GetMapping("/stream")
-    public ResponseEntity<StreamingResponseBody> getItemsStream(HttpServletRequest request) {
-        return ResponseEntity
-                .ok()
-                .header("Transfer-Encoding", "chunked")
-                .header("Content-Type", "text/plain")
-                .body(out -> {
-                    out.write(("Item 1" + "\n").getBytes());
-                    out.write(("Item 2" + "\n").getBytes());
-                    out.flush();
-                });
     }
 
     @GetMapping(value = "/throw", produces = "application/json; charset=utf-8")

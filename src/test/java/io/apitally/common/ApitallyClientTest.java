@@ -26,78 +26,77 @@ import io.apitally.common.dto.Response;
 
 class ApitallyClientTest {
 
-        private ApitallyClient client;
-        private ApitallyClient clientSpy;
+    private ApitallyClient client;
+    private ApitallyClient clientSpy;
 
-        @BeforeEach
-        void setUp() {
-                RequestLoggingConfig requestLoggingConfig = new RequestLoggingConfig();
-                requestLoggingConfig.setEnabled(true);
-                client = new ApitallyClient("00000000-0000-0000-0000-000000000000", "test", requestLoggingConfig);
-                clientSpy = spy(client);
+    @BeforeEach
+    void setUp() {
+        RequestLoggingConfig requestLoggingConfig = new RequestLoggingConfig();
+        requestLoggingConfig.setEnabled(true);
+        client = new ApitallyClient("00000000-0000-0000-0000-000000000000", "test", requestLoggingConfig);
+        clientSpy = spy(client);
+        when(clientSpy.sendHubRequest(any(HttpRequest.class)))
+                .thenReturn(CompletableFuture.completedFuture(ApitallyClient.HubRequestStatus.OK));
+    }
+
+    @AfterEach
+    void tearDown() {
+        client.shutdown();
+    }
+
+    @Test
+    void testSync() {
+        Header[] requestHeaders = new Header[] {
+                new Header("Content-Type", "application/json"),
+                new Header("User-Agent", "test-client"),
+        };
+        Header[] responseHeaders = new Header[] {
+                new Header("Content-Type", "application/json"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                "tester",
+                "GET",
+                "/items",
+                "http://test/items",
+                requestHeaders,
+                0L,
+                new byte[0]);
+        Response response = new Response(
+                200,
+                0.123,
+                responseHeaders,
+                13L,
+                "{\"items\": []}".getBytes());
+        client.requestLogger.logRequest(request, response);
+        client.requestLogger.maintain();
+
+        List<Path> paths = Arrays.asList(new Path("GET", "/items"));
+        Map<String, String> versions = new HashMap<>();
+        versions.put("package", "1.0.0");
+        clientSpy.setStartupData(paths, versions, "java:test");
+        clientSpy.startSync();
+
+        delay(100);
+
+        ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(clientSpy, times(3)).sendHubRequest(requestCaptor.capture());
+        List<HttpRequest> capturedRequests = requestCaptor.getAllValues();
+        assertTrue(capturedRequests.stream().anyMatch(
+                r -> r.uri().toString().contains("/startup")));
+        assertTrue(capturedRequests.stream().anyMatch(
+                r -> r.uri().toString().contains("/sync")));
+        assertTrue(capturedRequests.stream().anyMatch(
+                r -> r.uri().toString().contains("/log")));
+
+        clientSpy.stopSync();
+    }
+
+    private void delay(long millis) {
+        try {
+            Thread.sleep(millis);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-
-        @AfterEach
-        void tearDown() {
-                client.shutdown();
-        }
-
-        @Test
-        void testSync() {
-                when(clientSpy.sendHubRequest(any(HttpRequest.class)))
-                                .thenReturn(CompletableFuture.completedFuture(ApitallyClient.HubRequestStatus.OK));
-
-                Header[] requestHeaders = new Header[] {
-                                new Header("Content-Type", "application/json"),
-                                new Header("User-Agent", "test-client"),
-                };
-                Header[] responseHeaders = new Header[] {
-                                new Header("Content-Type", "application/json"),
-                };
-                Request request = new Request(
-                                System.currentTimeMillis() / 1000.0,
-                                "tester",
-                                "GET",
-                                "/items",
-                                "http://test/items",
-                                requestHeaders,
-                                0L,
-                                new byte[0]);
-                Response response = new Response(
-                                200,
-                                0.123,
-                                responseHeaders,
-                                13L,
-                                "{\"items\": []}".getBytes());
-                client.requestLogger.logRequest(request, response);
-                client.requestLogger.maintain();
-
-                List<Path> paths = Arrays.asList(new Path("GET", "/items"));
-                Map<String, String> versions = new HashMap<>();
-                versions.put("package", "1.0.0");
-                clientSpy.setStartupData(paths, versions, "java:test");
-                clientSpy.startSync();
-
-                delay(100);
-
-                ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-                verify(clientSpy, times(3)).sendHubRequest(requestCaptor.capture());
-                List<HttpRequest> capturedRequests = requestCaptor.getAllValues();
-                assertTrue(capturedRequests.stream().anyMatch(
-                                r -> r.uri().toString().contains("/startup")));
-                assertTrue(capturedRequests.stream().anyMatch(
-                                r -> r.uri().toString().contains("/sync")));
-                assertTrue(capturedRequests.stream().anyMatch(
-                                r -> r.uri().toString().contains("/log")));
-
-                clientSpy.stopSync();
-        }
-
-        private void delay(long millis) {
-                try {
-                        Thread.sleep(millis);
-                } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                }
-        }
+    }
 }
