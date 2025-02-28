@@ -103,7 +103,7 @@ class ApitallyFilterTest {
         response = restTemplate.getForEntity("/throw", String.class);
         assertTrue(response.getStatusCode().is5xxServerError());
 
-        delay(500);
+        delay(1000);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(5, requests.size(), "5 requests counted");
@@ -129,9 +129,15 @@ class ApitallyFilterTest {
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/stream")
                         && r.getStatusCode() == 200
+                        && r.getRequestCount() == 1),
+                "GET /stream request counted");
+        assertTrue(requests.stream().anyMatch(
+                r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/stream")
+                        && r.getStatusCode() == 200
                         && r.getRequestCount() == 1
                         && r.getResponseSizeSum() == 14),
-                "GET /stream request counted correctly");
+                "GET /stream request counted correctly with response size");
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
