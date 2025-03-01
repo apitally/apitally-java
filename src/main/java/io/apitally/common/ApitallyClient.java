@@ -35,11 +35,7 @@ public class ApitallyClient {
     }
 
     public enum HubRequestStatus {
-        OK,
-        VALIDATION_ERROR,
-        INVALID_CLIENT_ID,
-        PAYMENT_REQUIRED,
-        RETRYABLE_ERROR
+        OK, VALIDATION_ERROR, INVALID_CLIENT_ID, PAYMENT_REQUIRED, RETRYABLE_ERROR
     }
 
     private static final int SYNC_INTERVAL_SECONDS = 60;
@@ -47,16 +43,10 @@ public class ApitallyClient {
     private static final int INITIAL_PERIOD_SECONDS = 3600;
     private static final int MAX_QUEUE_TIME_SECONDS = 3600;
     private static final int REQUEST_TIMEOUT_SECONDS = 10;
-    private static final String HUB_BASE_URL = Optional.ofNullable(System.getenv("APITALLY_HUB_BASE_URL"))
-            .filter(s -> !s.trim().isEmpty())
-            .orElse("https://hub.apitally.io");
+    private static final String HUB_BASE_URL = Optional.ofNullable(System.getenv("APITALLY_HUB_BASE_URL")).filter(s -> !s.trim().isEmpty()).orElse("https://hub.apitally.io");
 
     private static final Logger logger = LoggerFactory.getLogger(ApitallyClient.class);
-    private static final RetryTemplate retryTemplate = RetryTemplate.builder()
-            .maxAttempts(3)
-            .exponentialBackoff(Duration.ofSeconds(1), 2, Duration.ofSeconds(4), true)
-            .retryOn(RetryableHubRequestException.class)
-            .build();
+    private static final RetryTemplate retryTemplate = RetryTemplate.builder().maxAttempts(3).exponentialBackoff(Duration.ofSeconds(1), 2, Duration.ofSeconds(4), true).retryOn(RetryableHubRequestException.class).build();
 
     private final String clientId;
     private final String env;
@@ -74,7 +64,7 @@ public class ApitallyClient {
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
 
-    private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<SyncData>();
+    private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<>();
     private final Random random = new Random();
 
     public ApitallyClient(String clientId, String env, RequestLoggingConfig requestLoggingConfig) {
@@ -95,11 +85,7 @@ public class ApitallyClient {
     }
 
     private HttpClient createHttpClient() {
-        return HttpClient.newBuilder()
-                .version(HttpClient.Version.HTTP_1_1)
-                .followRedirects(HttpClient.Redirect.NORMAL)
-                .connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS))
-                .build();
+        return HttpClient.newBuilder().version(HttpClient.Version.HTTP_1_1).followRedirects(HttpClient.Redirect.NORMAL).connectTimeout(Duration.ofSeconds(REQUEST_TIMEOUT_SECONDS)).build();
     }
 
     private URI getHubUrl(String endpoint) {
@@ -107,10 +93,12 @@ public class ApitallyClient {
     }
 
     private URI getHubUrl(String endpoint, String query) {
+        String formattedQuery = query;
         if (!query.isEmpty() && !query.startsWith("?")) {
-            query = "?" + query;
+            formattedQuery = "?" + query;
         }
-        return URI.create(HUB_BASE_URL + endpoint + query);
+        String hubBaseUrl = HUB_BASE_URL + "/" + env + "/" + endpoint + formattedQuery;
+        return URI.create(hubBaseUrl);
     }
 
     public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
@@ -121,11 +109,7 @@ public class ApitallyClient {
         if (startupData == null) {
             return;
         }
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(getHubUrl("startup"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(startupData.toJSON()))
-                .build();
+        HttpRequest request = HttpRequest.newBuilder().uri(getHubUrl("startup")).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(startupData.toJSON())).build();
         sendHubRequest(request).thenAccept(status -> {
             if (status == HubRequestStatus.OK) {
                 startupDataSent = true;
@@ -140,12 +124,7 @@ public class ApitallyClient {
     }
 
     private void sendSyncData() {
-        SyncData data = new SyncData(
-                instanceUuid,
-                requestCounter.getAndResetRequests(),
-                validationErrorCounter.getAndResetValidationErrors(),
-                serverErrorCounter.getAndResetServerErrors(),
-                consumerRegistry.getAndResetConsumers());
+        SyncData data = new SyncData(instanceUuid, requestCounter.getAndResetRequests(), validationErrorCounter.getAndResetValidationErrors(), serverErrorCounter.getAndResetServerErrors(), consumerRegistry.getAndResetConsumers());
         syncDataQueue.offer(data);
 
         int i = 0;
@@ -155,14 +134,10 @@ public class ApitallyClient {
                 try {
                     if (payload.getAgeInSeconds() <= MAX_QUEUE_TIME_SECONDS) {
                         if (i > 0) {
-                            // Add random delay between retries
+                            // what is nahui
                             Thread.sleep(100 + random.nextInt(400));
                         }
-                        HttpRequest request = HttpRequest.newBuilder()
-                                .uri(getHubUrl("sync"))
-                                .header("Content-Type", "application/json")
-                                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSON()))
-                                .build();
+                        HttpRequest request = HttpRequest.newBuilder().uri(getHubUrl("sync")).header("Content-Type", "application/json").POST(HttpRequest.BodyPublishers.ofString(payload.toJSON())).build();
                         HubRequestStatus status = sendHubRequest(request).join();
                         if (status == HubRequestStatus.RETRYABLE_ERROR) {
                             syncDataQueue.offer(payload);
@@ -191,11 +166,7 @@ public class ApitallyClient {
                 }
             }
             try (InputStream inputStream = logFile.getInputStream()) {
-                HttpRequest request = HttpRequest.newBuilder()
-                        .uri(getHubUrl("log", "uuid=" + logFile.getUuid().toString()))
-                        .header("Content-Type", "application/octet-stream")
-                        .POST(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream))
-                        .build();
+                HttpRequest request = HttpRequest.newBuilder().uri(getHubUrl("log", "uuid=" + logFile.getUuid().toString())).header("Content-Type", "application/octet-stream").POST(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream)).build();
                 HubRequestStatus status = sendHubRequest(request).join();
                 if (status == HubRequestStatus.PAYMENT_REQUIRED) {
                     requestLogger.clear();
@@ -237,12 +208,10 @@ public class ApitallyClient {
                             logger.error("Received validation error from Apitally hub: {}", response.body());
                             return HubRequestStatus.VALIDATION_ERROR;
                         } else {
-                            throw new RetryableHubRequestException(
-                                    "Hub request failed with status code " + response.statusCode());
+                            throw new RetryableHubRequestException("Hub request failed with status code " + response.statusCode());
                         }
                     } catch (Exception e) {
-                        throw new RetryableHubRequestException(
-                                "Hub request failed with exception: " + e.getMessage());
+                        throw new RetryableHubRequestException("Hub request failed with exception: " + e.getMessage());
                     }
                 });
             } catch (Exception e) {
@@ -266,20 +235,12 @@ public class ApitallyClient {
         }
 
         // Start with shorter initial sync interval
-        syncTask = scheduler.scheduleAtFixedRate(
-                this::sync,
-                0,
-                INITIAL_SYNC_INTERVAL_SECONDS,
-                TimeUnit.SECONDS);
+        syncTask = scheduler.scheduleAtFixedRate(this::sync, 0, INITIAL_SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
         // Schedule a one-time task to switch to regular sync interval
         scheduler.schedule(() -> {
             syncTask.cancel(false);
-            syncTask = scheduler.scheduleAtFixedRate(
-                    this::sync,
-                    SYNC_INTERVAL_SECONDS,
-                    SYNC_INTERVAL_SECONDS,
-                    TimeUnit.SECONDS);
+            syncTask = scheduler.scheduleAtFixedRate(this::sync, SYNC_INTERVAL_SECONDS, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
         }, INITIAL_PERIOD_SECONDS, TimeUnit.SECONDS);
     }
 
