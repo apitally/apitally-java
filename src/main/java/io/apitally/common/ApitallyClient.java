@@ -107,11 +107,12 @@ public class ApitallyClient {
     }
 
     private URI getHubUrl(String endpoint, String query) {
-        String baseUrl = HUB_BASE_URL.replaceAll("/+$", "");
+        String formattedQuery = query;
         if (!query.isEmpty() && !query.startsWith("?")) {
-            query = "?" + query;
+            formattedQuery = "?" + query;
         }
-        return URI.create(baseUrl + "/v2/" + clientId + "/" + env + "/" + endpoint + query);
+        final String baseUrl = HUB_BASE_URL + "/v2/" + clientId + "/" + env + "/" + endpoint + formattedQuery;
+        return URI.create(baseUrl);
     }
 
     public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
