@@ -110,7 +110,7 @@ public class ApitallyClient {
         if (!query.isEmpty() && !query.startsWith("?")) {
             query = "?" + query;
         }
-        return URI.create(baseUrl + endpoint + query);
+        return URI.create(HUB_BASE_URL + endpoint + query);
     }
 
     public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
