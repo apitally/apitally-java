@@ -103,7 +103,7 @@ class ApitallyFilterTest {
         delay(100);
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
-        assertEquals(4, requests.size(), "5 requests counted");
+        assertEquals(4, requests.size(), "4 requests counted");
         assertTrue(requests.stream()
                 .anyMatch(r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items")
