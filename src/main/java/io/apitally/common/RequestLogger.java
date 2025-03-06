@@ -152,16 +152,6 @@ public class RequestLogger {
                 }
             }
 
-            // Process headers
-            request.setHeaders(
-                    config.isRequestHeadersIncluded()
-                            ? maskHeaders(request.getHeaders()).toArray(new Header[0])
-                            : new Header[0]);
-            response.setHeaders(
-                    config.isResponseHeadersIncluded()
-                            ? maskHeaders(response.getHeaders()).toArray(new Header[0])
-                            : new Header[0]);
-
             // Process request body
             if (!config.isRequestBodyIncluded() || !hasSupportedContentType(request.getHeaders())) {
                 request.setBody(null);
@@ -191,6 +181,16 @@ public class RequestLogger {
                     }
                 }
             }
+
+            // Process headers
+            request.setHeaders(
+                    config.isRequestHeadersIncluded()
+                            ? maskHeaders(request.getHeaders()).toArray(new Header[0])
+                            : new Header[0]);
+            response.setHeaders(
+                    config.isResponseHeadersIncluded()
+                            ? maskHeaders(response.getHeaders()).toArray(new Header[0])
+                            : new Header[0]);
 
             // Create log item
             ObjectNode item = objectMapper.createObjectNode();
