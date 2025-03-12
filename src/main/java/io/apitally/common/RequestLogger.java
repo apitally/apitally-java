@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import io.apitally.common.dto.ExceptionDto;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
@@ -123,7 +124,7 @@ public class RequestLogger {
         this.suspendUntil = timestamp;
     }
 
-    public void logRequest(Request request, Response response) {
+    public void logRequest(Request request, Response response, Exception exception) {
         if (!enabled || suspendUntil != null && suspendUntil > System.currentTimeMillis()) {
             return;
         }
@@ -197,6 +198,10 @@ public class RequestLogger {
             item.put("uuid", UUID.randomUUID().toString());
             item.set("request", skipEmptyValues(objectMapper.valueToTree(request)));
             item.set("response", skipEmptyValues(objectMapper.valueToTree(response)));
+            if (exception != null && config.isExceptionIncluded()) {
+                ExceptionDto exceptionDto = new ExceptionDto(exception);
+                item.set("exception", objectMapper.valueToTree(exceptionDto));
+            }
 
             String serializedItem = objectMapper.writeValueAsString(item);
             pendingWrites.add(serializedItem);

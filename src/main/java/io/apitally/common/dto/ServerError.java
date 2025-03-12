@@ -64,7 +64,7 @@ public class ServerError {
         return stackTraceString;
     }
 
-    private String truncateMessage(String msg) {
+    public static String truncateMessage(String msg) {
         msg = msg.trim();
         if (msg.length() <= MAX_MSG_LENGTH) {
             return msg;
@@ -74,7 +74,7 @@ public class ServerError {
         return msg.substring(0, cutoff) + suffix;
     }
 
-    private String truncateStackTrace(StackTraceElement[] stackTrace) {
+    public static String truncateStackTrace(StackTraceElement[] stackTrace) {
         String suffix = "... (truncated) ...";
         int cutoff = MAX_STACKTRACE_LENGTH - suffix.length();
         List<String> truncatedLines = new ArrayList<>();
