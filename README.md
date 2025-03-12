@@ -17,13 +17,12 @@
 
 ---
 
-# Apitally client library for Java
+# Apitally SDK for Java
 
 [![Tests](https://github.com/apitally/apitally-java/actions/workflows/tests.yaml/badge.svg?event=push)](https://github.com/apitally/apitally-java/actions)
 [![Codecov](https://codecov.io/gh/apitally/apitally-java/graph/badge.svg?token=sV0D4JeWG6)](https://codecov.io/gh/apitally/apitally-java)
 
-This client library for Apitally currently supports the following Java web
-frameworks:
+This SDK for Apitally currently supports the following Java web frameworks:
 
 - [Spring Boot](https://docs.apitally.io/frameworks/spring-boot) (≥ 3.0, Java
   17+)
