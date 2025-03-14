@@ -10,6 +10,7 @@ public class RequestLoggingConfig {
     private boolean requestBodyIncluded = false;
     private boolean responseHeadersIncluded = true;
     private boolean responseBodyIncluded = false;
+    private boolean exceptionIncluded = true;
     private List<String> queryParamMaskPatterns = new ArrayList<>();
     private List<String> headerMaskPatterns = new ArrayList<>();
     private List<String> pathExcludePatterns = new ArrayList<>();
@@ -61,6 +62,14 @@ public class RequestLoggingConfig {
 
     public void setResponseBodyIncluded(boolean responseBodyIncluded) {
         this.responseBodyIncluded = responseBodyIncluded;
+    }
+
+    public boolean isExceptionIncluded() {
+        return exceptionIncluded;
+    }
+
+    public void setExceptionIncluded(boolean exceptionIncluded) {
+        this.exceptionIncluded = exceptionIncluded;
     }
 
     public List<String> getQueryParamMaskPatterns() {

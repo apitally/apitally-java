@@ -68,7 +68,7 @@ class ApitallyClientTest {
                 responseHeaders,
                 13L,
                 "{\"items\": []}".getBytes());
-        client.requestLogger.logRequest(request, response);
+        client.requestLogger.logRequest(request, response, null);
         client.requestLogger.maintain();
 
         List<Path> paths = Arrays.asList(new Path("GET", "/items"));

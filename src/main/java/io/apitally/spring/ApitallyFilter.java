@@ -92,6 +92,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 client.consumerRegistry.addOrUpdateConsumer(consumer);
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 
+                // Get captured exception
+                Object capturedException = request.getAttribute("apitallyCapturedException");
+                if (exception == null && capturedException != null && capturedException instanceof Exception) {
+                    exception = (Exception) capturedException;
+                }
+
                 // Add request to counter
                 final long requestContentLength = request.getContentLengthLong();
                 final long requestSize = requestContentLength >= 0 ? requestContentLength
@@ -119,12 +125,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
                             new Request(startTime / 1000.0, consumerIdentifier, request.getMethod(), path,
                                     request.getRequestURL().toString(), requestHeaders, requestSize, requestBody),
                             new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
-                                    responseSize, responseBody));
+                                    responseSize, responseBody),
+                            exception);
                 }
 
                 // Add validation error to counter
                 if (response.getStatus() >= 400 && response.getStatus() < 500) {
-                    Object capturedException = request.getAttribute("apitallyCapturedException");
                     if (capturedException instanceof ConstraintViolationException e) {
                         for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
                             client.validationErrorCounter.addValidationError(
@@ -144,15 +150,8 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 }
 
                 // Add server error to counter
-                if (response.getStatus() == 500) {
-                    Object capturedException = request.getAttribute("apitallyCapturedException");
-                    if (exception == null && capturedException != null && capturedException instanceof Exception) {
-                        exception = (Exception) capturedException;
-                    }
-                    if (exception != null) {
-                        client.serverErrorCounter.addServerError(
-                                consumerIdentifier, request.getMethod(), path, exception);
-                    }
+                if (response.getStatus() == 500 && exception != null) {
+                    client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path, exception);
                 }
             } catch (Exception e) {
                 logger.error("Error in Apitally filter", e);
