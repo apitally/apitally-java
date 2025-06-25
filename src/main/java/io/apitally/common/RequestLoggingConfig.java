@@ -13,6 +13,7 @@ public class RequestLoggingConfig {
     private boolean exceptionIncluded = true;
     private List<String> queryParamMaskPatterns = new ArrayList<>();
     private List<String> headerMaskPatterns = new ArrayList<>();
+    private List<String> bodyFieldMaskPatterns = new ArrayList<>();
     private List<String> pathExcludePatterns = new ArrayList<>();
     private RequestLoggingCallbacks callbacks;
 
@@ -86,6 +87,14 @@ public class RequestLoggingConfig {
 
     public void setHeaderMaskPatterns(List<String> headerMaskPatterns) {
         this.headerMaskPatterns = headerMaskPatterns;
+    }
+
+    public List<String> getBodyFieldMaskPatterns() {
+        return bodyFieldMaskPatterns;
+    }
+
+    public void setBodyFieldMaskPatterns(List<String> bodyFieldMaskPatterns) {
+        this.bodyFieldMaskPatterns = bodyFieldMaskPatterns;
     }
 
     public List<String> getPathExcludePatterns() {

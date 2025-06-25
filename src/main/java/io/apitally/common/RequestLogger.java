@@ -40,6 +40,7 @@ public class RequestLogger {
     private static final byte[] BODY_MASKED = "<masked>".getBytes(StandardCharsets.UTF_8);
     private static final String MASKED = "******";
     public static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
+    private static final Pattern JSON_CONTENT_TYPE_PATTERN = Pattern.compile("\\bjson\\b", Pattern.CASE_INSENSITIVE);
     private static final List<String> EXCLUDE_PATH_PATTERNS = Arrays.asList(
             "/_?healthz?$",
             "/_?health[_-]?checks?$",
@@ -65,6 +66,15 @@ public class RequestLogger {
             "secret",
             "token",
             "cookie");
+    private static final List<String> MASK_BODY_FIELD_PATTERNS = Arrays.asList(
+            "password",
+            "pwd",
+            "token",
+            "secret",
+            "auth",
+            "card[-_ ]?number",
+            "ccv",
+            "ssn");
     private static final int MAINTAIN_INTERVAL_SECONDS = 1;
 
     private final RequestLoggingConfig config;
@@ -82,6 +92,7 @@ public class RequestLogger {
     private final List<Pattern> compiledUserAgentExcludePatterns;
     private final List<Pattern> compiledQueryParamMaskPatterns;
     private final List<Pattern> compiledHeaderMaskPatterns;
+    private final List<Pattern> compiledBodyFieldMaskPatterns;
 
     public RequestLogger(RequestLoggingConfig config) {
         this.config = config;
@@ -96,6 +107,8 @@ public class RequestLogger {
         this.compiledQueryParamMaskPatterns = compilePatterns(MASK_QUERY_PARAM_PATTERNS,
                 config.getQueryParamMaskPatterns());
         this.compiledHeaderMaskPatterns = compilePatterns(MASK_HEADER_PATTERNS, config.getHeaderMaskPatterns());
+        this.compiledBodyFieldMaskPatterns = compilePatterns(MASK_BODY_FIELD_PATTERNS,
+                config.getBodyFieldMaskPatterns());
 
         if (enabled) {
             startMaintenance();
@@ -344,6 +357,11 @@ public class RequestLogger {
                 .anyMatch(p -> p.matcher(name).find());
     }
 
+    private boolean shouldMaskBodyField(String name) {
+        return compiledBodyFieldMaskPatterns.stream()
+                .anyMatch(p -> p.matcher(name).find());
+    }
+
     private String maskQueryParams(String query) {
         if (query == null || query.isEmpty()) {
             return query;
@@ -375,6 +393,11 @@ public class RequestLogger {
         String contentType = findHeader(headers, "content-type");
         return contentType != null && ALLOWED_CONTENT_TYPES.stream()
                 .anyMatch(contentType::startsWith);
+    }
+
+    private boolean hasJsonContentType(Header[] headers) {
+        String contentType = findHeader(headers, "content-type");
+        return contentType != null && JSON_CONTENT_TYPE_PATTERN.matcher(contentType).find();
     }
 
     private String findHeader(Header[] headers, String name) {
