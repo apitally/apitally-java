@@ -430,7 +430,7 @@ public class RequestLogger {
     private void maskJsonNode(JsonNode node) {
         if (node.isObject()) {
             ObjectNode objectNode = (ObjectNode) node;
-            objectNode.properties().forEach(entry -> {
+            objectNode.fields().forEachRemaining(entry -> {
                 if (entry.getValue().isTextual() && shouldMaskBodyField(entry.getKey())) {
                     objectNode.put(entry.getKey(), MASKED);
                 } else {
@@ -463,7 +463,7 @@ public class RequestLogger {
 
     private ObjectNode skipEmptyValues(ObjectNode node) {
         ObjectNode result = objectMapper.createObjectNode();
-        node.properties().forEach(entry -> {
+        node.fields().forEachRemaining(entry -> {
             if (entry.getValue().isNull()) {
                 return;
             }
