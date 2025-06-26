@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -21,12 +20,14 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.apitally.common.dto.ExceptionDto;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.Request;
+import io.apitally.common.dto.RequestLogItem;
 import io.apitally.common.dto.Response;
 
 public class RequestLogger {
@@ -40,6 +41,7 @@ public class RequestLogger {
     private static final byte[] BODY_MASKED = "<masked>".getBytes(StandardCharsets.UTF_8);
     private static final String MASKED = "******";
     public static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
+    private static final Pattern JSON_CONTENT_TYPE_PATTERN = Pattern.compile("\\bjson\\b", Pattern.CASE_INSENSITIVE);
     private static final List<String> EXCLUDE_PATH_PATTERNS = Arrays.asList(
             "/_?healthz?$",
             "/_?health[_-]?checks?$",
@@ -65,12 +67,21 @@ public class RequestLogger {
             "secret",
             "token",
             "cookie");
+    private static final List<String> MASK_BODY_FIELD_PATTERNS = Arrays.asList(
+            "password",
+            "pwd",
+            "token",
+            "secret",
+            "auth",
+            "card[-_ ]?number",
+            "ccv",
+            "ssn");
     private static final int MAINTAIN_INTERVAL_SECONDS = 1;
 
     private final RequestLoggingConfig config;
     private final ObjectMapper objectMapper;
     private final ReentrantLock lock;
-    private final Deque<String> pendingWrites;
+    private final Deque<RequestLogItem> pendingWrites;
     private final Deque<TempGzipFile> files;
     private TempGzipFile currentFile;
     private boolean enabled;
@@ -82,6 +93,7 @@ public class RequestLogger {
     private final List<Pattern> compiledUserAgentExcludePatterns;
     private final List<Pattern> compiledQueryParamMaskPatterns;
     private final List<Pattern> compiledHeaderMaskPatterns;
+    private final List<Pattern> compiledBodyFieldMaskPatterns;
 
     public RequestLogger(RequestLoggingConfig config) {
         this.config = config;
@@ -96,6 +108,8 @@ public class RequestLogger {
         this.compiledQueryParamMaskPatterns = compilePatterns(MASK_QUERY_PARAM_PATTERNS,
                 config.getQueryParamMaskPatterns());
         this.compiledHeaderMaskPatterns = compilePatterns(MASK_HEADER_PATTERNS, config.getHeaderMaskPatterns());
+        this.compiledBodyFieldMaskPatterns = compilePatterns(MASK_BODY_FIELD_PATTERNS,
+                config.getBodyFieldMaskPatterns());
 
         if (enabled) {
             startMaintenance();
@@ -131,86 +145,101 @@ public class RequestLogger {
 
         try {
             String userAgent = findHeader(request.getHeaders(), "user-agent");
-            if (shouldExcludePath(request.getPath()) || shouldExcludeUserAgent(userAgent)
-                    || (config.getCallbacks() != null && config.getCallbacks().shouldExclude(request, response))) {
+            if (shouldExcludePath(request.getPath()) || shouldExcludeUserAgent(userAgent)) {
+                return;
+            }
+            if (config.getCallbacks() != null && config.getCallbacks().shouldExclude(request, response)) {
                 return;
             }
 
-            // Process query params and URL
-            if (request.getUrl() != null) {
-                try {
-                    URL url = new URL(request.getUrl());
-                    String query = url.getQuery();
-                    if (!config.isQueryParamsIncluded()) {
-                        query = null;
-                    } else if (query != null) {
-                        query = maskQueryParams(query);
-                    }
-                    request.setUrl(new java.net.URL(url.getProtocol(), url.getHost(), url.getPort(),
-                            url.getPath() + (query != null ? "?" + query : "")).toString());
-                } catch (MalformedURLException e) {
-                    return;
-                }
-            }
-
-            // Process request body
             if (!config.isRequestBodyIncluded() || !hasSupportedContentType(request.getHeaders())) {
                 request.setBody(null);
-            } else if (request.getBody() != null) {
-                if (request.getBody().length > MAX_BODY_SIZE) {
-                    request.setBody(BODY_TOO_LARGE);
-                } else if (config.getCallbacks() != null) {
-                    byte[] maskedBody = config.getCallbacks().maskRequestBody(request);
-                    request.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
-                    if (request.getBody().length > MAX_BODY_SIZE) {
-                        request.setBody(BODY_TOO_LARGE);
-                    }
-                }
             }
-
-            // Process response body
             if (!config.isResponseBodyIncluded() || !hasSupportedContentType(response.getHeaders())) {
                 response.setBody(null);
-            } else if (response.getBody() != null) {
-                if (response.getBody().length > MAX_BODY_SIZE) {
-                    response.setBody(BODY_TOO_LARGE);
-                } else if (config.getCallbacks() != null) {
-                    byte[] maskedBody = config.getCallbacks().maskResponseBody(request, response);
-                    response.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
-                    if (response.getBody().length > MAX_BODY_SIZE) {
-                        response.setBody(BODY_TOO_LARGE);
-                    }
-                }
             }
 
-            // Process headers
-            request.setHeaders(
-                    config.isRequestHeadersIncluded()
-                            ? maskHeaders(request.getHeaders()).toArray(new Header[0])
-                            : new Header[0]);
-            response.setHeaders(
-                    config.isResponseHeadersIncluded()
-                            ? maskHeaders(response.getHeaders()).toArray(new Header[0])
-                            : new Header[0]);
-
-            // Create log item
-            ObjectNode item = objectMapper.createObjectNode();
-            item.put("uuid", UUID.randomUUID().toString());
-            item.set("request", skipEmptyValues(objectMapper.valueToTree(request)));
-            item.set("response", skipEmptyValues(objectMapper.valueToTree(response)));
+            ExceptionDto exceptionDto = null;
             if (exception != null && config.isExceptionIncluded()) {
-                ExceptionDto exceptionDto = new ExceptionDto(exception);
-                item.set("exception", objectMapper.valueToTree(exceptionDto));
+                exceptionDto = new ExceptionDto(exception);
             }
 
-            String serializedItem = objectMapper.writeValueAsString(item);
-            pendingWrites.add(serializedItem);
+            RequestLogItem item = new RequestLogItem(request, response, exceptionDto);
+            pendingWrites.add(item);
 
             if (pendingWrites.size() > MAX_PENDING_WRITES) {
                 pendingWrites.poll();
             }
         } catch (Exception e) {
             logger.error("Error while logging request", e);
+        }
+    }
+
+    private void applyMasking(RequestLogItem item) {
+        Request request = item.getRequest();
+        Response response = item.getResponse();
+
+        if (request.getBody() != null) {
+            // Apply user-provided masking callback for request body
+            if (config.getCallbacks() != null) {
+                byte[] maskedBody = config.getCallbacks().maskRequestBody(request);
+                request.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
+            }
+
+            if (request.getBody().length > MAX_BODY_SIZE) {
+                request.setBody(BODY_TOO_LARGE);
+            }
+
+            // Mask request body fields (if JSON)
+            if (!Arrays.equals(request.getBody(), BODY_TOO_LARGE) && !Arrays.equals(request.getBody(), BODY_MASKED)
+                    && hasJsonContentType(request.getHeaders())) {
+                request.setBody(maskJsonBody(request.getBody()));
+            }
+        }
+
+        if (response.getBody() != null) {
+            // Apply user-provided masking callback for response body
+            if (config.getCallbacks() != null) {
+                byte[] maskedBody = config.getCallbacks().maskResponseBody(request, response);
+                response.setBody(maskedBody != null ? maskedBody : BODY_MASKED);
+            }
+
+            if (response.getBody().length > MAX_BODY_SIZE) {
+                response.setBody(BODY_TOO_LARGE);
+            }
+
+            // Mask response body fields (if JSON)
+            if (!Arrays.equals(response.getBody(), BODY_TOO_LARGE) && !Arrays.equals(response.getBody(), BODY_MASKED)
+                    && hasJsonContentType(response.getHeaders())) {
+                response.setBody(maskJsonBody(response.getBody()));
+            }
+        }
+
+        // Process headers
+        request.setHeaders(
+                config.isRequestHeadersIncluded()
+                        ? maskHeaders(request.getHeaders()).toArray(new Header[0])
+                        : new Header[0]);
+        response.setHeaders(
+                config.isResponseHeadersIncluded()
+                        ? maskHeaders(response.getHeaders()).toArray(new Header[0])
+                        : new Header[0]);
+
+        // Process query params and URL
+        if (request.getUrl() != null) {
+            try {
+                URL url = new URL(request.getUrl());
+                String query = url.getQuery();
+                if (!config.isQueryParamsIncluded()) {
+                    query = null;
+                } else if (query != null) {
+                    query = maskQueryParams(query);
+                }
+                request.setUrl(new java.net.URL(url.getProtocol(), url.getHost(), url.getPort(),
+                        url.getPath() + (query != null ? "?" + query : "")).toString());
+            } catch (MalformedURLException e) {
+                // Keep original URL if malformed
+            }
         }
     }
 
@@ -223,9 +252,20 @@ public class RequestLogger {
             if (currentFile == null) {
                 currentFile = new TempGzipFile();
             }
-            String item;
+            RequestLogItem item;
             while ((item = pendingWrites.poll()) != null) {
-                currentFile.writeLine(item.getBytes(StandardCharsets.UTF_8));
+                applyMasking(item);
+
+                ObjectNode itemNode = objectMapper.createObjectNode();
+                itemNode.put("uuid", item.getUuid());
+                itemNode.set("request", skipEmptyValues(objectMapper.valueToTree(item.getRequest())));
+                itemNode.set("response", skipEmptyValues(objectMapper.valueToTree(item.getResponse())));
+                if (item.getException() != null) {
+                    itemNode.set("exception", objectMapper.valueToTree(item.getException()));
+                }
+
+                String serializedItem = objectMapper.writeValueAsString(itemNode);
+                currentFile.writeLine(serializedItem.getBytes(StandardCharsets.UTF_8));
             }
         } finally {
             lock.unlock();
@@ -344,6 +384,11 @@ public class RequestLogger {
                 .anyMatch(p -> p.matcher(name).find());
     }
 
+    private boolean shouldMaskBodyField(String name) {
+        return compiledBodyFieldMaskPatterns.stream()
+                .anyMatch(p -> p.matcher(name).find());
+    }
+
     private String maskQueryParams(String query) {
         if (query == null || query.isEmpty()) {
             return query;
@@ -371,10 +416,41 @@ public class RequestLogger {
                 .collect(Collectors.toList());
     }
 
+    private byte[] maskJsonBody(byte[] body) {
+        try {
+            String json = new String(body, StandardCharsets.UTF_8);
+            JsonNode node = objectMapper.readTree(json);
+            maskJsonNode(node);
+            return objectMapper.writeValueAsString(node).getBytes(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return body;
+        }
+    }
+
+    private void maskJsonNode(JsonNode node) {
+        if (node.isObject()) {
+            ObjectNode objectNode = (ObjectNode) node;
+            objectNode.fields().forEachRemaining(entry -> {
+                if (entry.getValue().isTextual() && shouldMaskBodyField(entry.getKey())) {
+                    objectNode.put(entry.getKey(), MASKED);
+                } else {
+                    maskJsonNode(entry.getValue());
+                }
+            });
+        } else if (node.isArray()) {
+            node.forEach(this::maskJsonNode);
+        }
+    }
+
     private boolean hasSupportedContentType(Header[] headers) {
         String contentType = findHeader(headers, "content-type");
         return contentType != null && ALLOWED_CONTENT_TYPES.stream()
                 .anyMatch(contentType::startsWith);
+    }
+
+    private boolean hasJsonContentType(Header[] headers) {
+        String contentType = findHeader(headers, "content-type");
+        return contentType != null && JSON_CONTENT_TYPE_PATTERN.matcher(contentType).find();
     }
 
     private String findHeader(Header[] headers, String name) {
