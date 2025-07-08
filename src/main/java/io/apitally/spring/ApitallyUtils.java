@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.core.SpringVersion;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.mvc.condition.PathPatternsRequestCondition;
 import org.springframework.web.servlet.mvc.condition.PatternsRequestCondition;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
@@ -19,6 +20,7 @@ final public class ApitallyUtils {
                 .flatMap(entry -> {
                     RequestMappingInfo mappingInfo = entry.getKey();
                     return mappingInfo.getMethodsCondition().getMethods().stream()
+                            .filter(method -> method != RequestMethod.OPTIONS && method != RequestMethod.HEAD)
                             .flatMap(method -> {
                                 PathPatternsRequestCondition pathPatterns = mappingInfo.getPathPatternsCondition();
                                 if (pathPatterns != null && pathPatterns.getPatterns() != null) {
