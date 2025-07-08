@@ -42,7 +42,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
-        if (!client.isEnabled()) {
+        if (!client.isEnabled() || request.getMethod().equals("OPTIONS")) {
             filterChain.doFilter(request, response);
             return;
         }
