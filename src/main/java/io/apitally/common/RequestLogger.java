@@ -48,7 +48,16 @@ public class RequestLogger {
             "/_?heart[_-]?beats?$",
             "/ping$",
             "/ready$",
-            "/live$");
+            "/live$",
+            "/favicon(?:-[\\w-]+)?\\.(ico|png|svg)$",
+            "/apple-touch-icon(?:-[\\w-]+)?\\.png$",
+            "/robots\\.txt$",
+            "/sitemap\\.xml$",
+            "/manifest\\.json$",
+            "/site\\.webmanifest$",
+            "/service-worker\\.js$",
+            "/sw\\.js$",
+            "/\\.well-known/");
     private static final List<String> EXCLUDE_USER_AGENT_PATTERNS = Arrays.asList(
             "health[-_ ]?check",
             "microsoft-azure-application-lb",
@@ -144,8 +153,16 @@ public class RequestLogger {
         }
 
         try {
+            String path = request.getPath();
+            if (path == null || path.isEmpty()) {
+                try {
+                    path = new URL(request.getUrl()).getPath();
+                } catch (MalformedURLException e) {
+                    path = "";
+                }
+            }
             String userAgent = findHeader(request.getHeaders(), "user-agent");
-            if (shouldExcludePath(request.getPath()) || shouldExcludeUserAgent(userAgent)) {
+            if (shouldExcludePath(path) || shouldExcludeUserAgent(userAgent)) {
                 return;
             }
             if (config.getCallbacks() != null && config.getCallbacks().shouldExclude(request, response)) {
@@ -362,7 +379,7 @@ public class RequestLogger {
     }
 
     private boolean shouldExcludePath(String path) {
-        if (path == null) {
+        if (path == null || path.isEmpty()) {
             return false;
         }
         return compiledPathExcludePatterns.stream()
@@ -370,7 +387,7 @@ public class RequestLogger {
     }
 
     private boolean shouldExcludeUserAgent(String userAgent) {
-        return userAgent != null && compiledUserAgentExcludePatterns.stream()
+        return userAgent != null && !userAgent.isEmpty() && compiledUserAgentExcludePatterns.stream()
                 .anyMatch(p -> p.matcher(userAgent).find());
     }
 
