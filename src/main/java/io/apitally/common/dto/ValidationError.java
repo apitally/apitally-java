@@ -11,7 +11,8 @@ public class ValidationError extends BaseDto {
     private final String msg;
     private final String type;
 
-    public ValidationError(String consumer, String method, String path, String loc, String msg, String type) {
+    public ValidationError(
+            String consumer, String method, String path, String loc, String msg, String type) {
         this.consumer = consumer;
         this.method = method;
         this.path = path;

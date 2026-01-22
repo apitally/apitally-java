@@ -1,8 +1,13 @@
 package io.apitally.spring.app;
 
+import io.apitally.spring.ApitallyConsumer;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.ConstraintViolationException;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.Size;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,20 +25,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import io.apitally.spring.ApitallyConsumer;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.ConstraintViolationException;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.Size;
-
 @RestController
 @Validated
 public class TestController {
     private static final Logger logger = LoggerFactory.getLogger(TestController.class);
 
     @GetMapping("/items")
-    public List<TestItem> getItems(HttpServletRequest request,
+    public List<TestItem> getItems(
+            HttpServletRequest request,
             @RequestParam(required = false) @Size(min = 2, max = 10) String name) {
         logger.info("Getting items with filter: {}", name != null ? name : "none");
         ApitallyConsumer consumer = new ApitallyConsumer("tester", "Tester", "Test Group");
@@ -47,8 +46,7 @@ public class TestController {
 
     @PostMapping("/items")
     @ResponseStatus(HttpStatus.CREATED)
-    public void addItem(@Valid @RequestBody TestItem newItem) {
-    }
+    public void addItem(@Valid @RequestBody TestItem newItem) {}
 
     @GetMapping("/items/{id}")
     public TestItem getItem(@PathVariable @Min(1) Integer id) {
@@ -58,22 +56,24 @@ public class TestController {
 
     @PutMapping("/items/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateItem(@Valid @RequestBody TestItem newItem, @PathVariable @Min(1) Integer id) {
-    }
+    public void updateItem(
+            @Valid @RequestBody TestItem newItem, @PathVariable @Min(1) Integer id) {}
 
     @DeleteMapping(value = "/items/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteItem(@PathVariable @Min(1) Integer id) {
-    }
+    public void deleteItem(@PathVariable @Min(1) Integer id) {}
 
     @GetMapping(value = "/throw", produces = "application/json; charset=utf-8")
     public String getError() {
         throw new TestException("test");
     }
 
-    @ExceptionHandler({ ConstraintViolationException.class })
+    @ExceptionHandler({ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    private ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException e) {
-        return ResponseEntity.of(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage())).build();
+    private ResponseEntity<Object> handleConstraintViolationException(
+            ConstraintViolationException e) {
+        return ResponseEntity.of(
+                        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()))
+                .build();
     }
 }

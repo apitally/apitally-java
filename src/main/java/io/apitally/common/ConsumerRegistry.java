@@ -1,13 +1,12 @@
 package io.apitally.common;
 
+import io.apitally.common.dto.Consumer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import io.apitally.common.dto.Consumer;
 
 public class ConsumerRegistry {
     private final Map<String, Consumer> consumers;
@@ -57,7 +56,8 @@ public class ConsumerRegistry {
             }
 
             if (hasChanges) {
-                consumers.put(consumer.getIdentifier(),
+                consumers.put(
+                        consumer.getIdentifier(),
                         new Consumer(consumer.getIdentifier(), newName, newGroup));
                 updated.add(consumer.getIdentifier());
             }

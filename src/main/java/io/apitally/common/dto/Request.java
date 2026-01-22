@@ -7,8 +7,15 @@ public class Request extends RequestResponseBase {
     private final String path;
     private String url;
 
-    public Request(double timestamp, String consumer, String method, String path, String url,
-            Header[] headers, Long size, byte[] body) {
+    public Request(
+            double timestamp,
+            String consumer,
+            String method,
+            String path,
+            String url,
+            Header[] headers,
+            Long size,
+            byte[] body) {
         super(headers, size, body);
         this.timestamp = timestamp;
         this.consumer = consumer;

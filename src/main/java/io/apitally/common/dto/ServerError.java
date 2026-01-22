@@ -1,10 +1,9 @@
 package io.apitally.common.dto;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.ArrayList;
+import java.util.List;
 
 public class ServerError {
     private static final int MAX_MSG_LENGTH = 2048;
@@ -18,7 +17,12 @@ public class ServerError {
     private final StackTraceElement[] stackTrace;
     private final String stackTraceString;
 
-    public ServerError(String consumer, String method, String path, String type, String message,
+    public ServerError(
+            String consumer,
+            String method,
+            String path,
+            String type,
+            String message,
             StackTraceElement[] stackTrace) {
         this.consumer = consumer;
         this.method = method;

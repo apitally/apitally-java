@@ -1,10 +1,9 @@
 package io.apitally.common.dto;
 
-import java.util.Arrays;
-import java.util.Base64;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Arrays;
+import java.util.Base64;
 
 public class RequestResponseBase {
     private Header[] headers;
@@ -25,7 +24,7 @@ public class RequestResponseBase {
     @JsonProperty("headers")
     public String[][] getHeadersForJson() {
         return Arrays.stream(headers)
-                .map(header -> new String[] { header.getName(), header.getValue() })
+                .map(header -> new String[] {header.getName(), header.getValue()})
                 .toArray(String[][]::new);
     }
 
