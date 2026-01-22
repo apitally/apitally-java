@@ -1,10 +1,9 @@
 package io.apitally.common.dto;
 
-import java.util.List;
-import java.util.UUID;
-
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.List;
+import java.util.UUID;
 
 public class SyncData extends BaseDto {
     private final double timestamp;
@@ -15,8 +14,12 @@ public class SyncData extends BaseDto {
     private final List<ServerErrors> serverErrors;
     private final List<Consumer> consumers;
 
-    public SyncData(UUID instanceUuid, List<Requests> requests, List<ValidationErrors> validationErrors,
-            List<ServerErrors> serverErrors, List<Consumer> consumers) {
+    public SyncData(
+            UUID instanceUuid,
+            List<Requests> requests,
+            List<ValidationErrors> validationErrors,
+            List<ServerErrors> serverErrors,
+            List<Consumer> consumers) {
         this.timestamp = System.currentTimeMillis() / 1000.0;
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();

@@ -16,7 +16,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.UUID;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,12 +33,13 @@ class InstanceLockTest {
         if (tempDir != null && Files.exists(tempDir)) {
             try (var paths = Files.walk(tempDir)) {
                 paths.sorted(Comparator.reverseOrder())
-                        .forEach(path -> {
-                            try {
-                                Files.deleteIfExists(path);
-                            } catch (IOException ignored) {
-                            }
-                        });
+                        .forEach(
+                                path -> {
+                                    try {
+                                        Files.deleteIfExists(path);
+                                    } catch (IOException ignored) {
+                                    }
+                                });
             }
         }
     }

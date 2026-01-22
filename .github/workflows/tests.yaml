@@ -10,14 +10,16 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check-pre-commit:
+  check-spotless:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-java@v5
         with:
-          python-version: "3.14"
-      - uses: pre-commit/action@v3.0.1
+          java-version: 17
+          distribution: temurin
+      - name: Check formatting
+        run: mvn -B spotless:check
 
   test-coverage:
     runs-on: ubuntu-latest

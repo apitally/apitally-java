@@ -1,19 +1,5 @@
 package io.apitally.spring;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
-import org.springframework.validation.FieldError;
-import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.servlet.HandlerMapping;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.ContentCachingResponseWrapper;
-
 import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
@@ -23,7 +9,6 @@ import io.apitally.common.dto.Header;
 import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
-
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
@@ -33,6 +18,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletResponseWrapper;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.servlet.HandlerMapping;
+import org.springframework.web.util.ContentCachingRequestWrapper;
+import org.springframework.web.util.ContentCachingResponseWrapper;
 
 public class ApitallyFilter extends OncePerRequestFilter {
     private static final Logger logger = LoggerFactory.getLogger(ApitallyFilter.class);
@@ -44,33 +41,38 @@ public class ApitallyFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
         if (!client.isEnabled() || request.getMethod().equals("OPTIONS")) {
             filterChain.doFilter(request, response);
             return;
         }
 
         String requestContentType = request.getContentType();
-        final boolean shouldCacheRequest = client.requestLogger.getConfig().isEnabled()
-                && client.requestLogger.getConfig().isRequestBodyIncluded()
-                && requestContentType != null
-                && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
-                        .anyMatch(allowedContentType -> requestContentType.startsWith(allowedContentType));
-        final boolean shouldCacheResponse = client.requestLogger.getConfig().isEnabled()
-                && client.requestLogger.getConfig().isResponseBodyIncluded();
-        ContentCachingRequestWrapper cachingRequest = shouldCacheRequest
-                ? new ContentCachingRequestWrapper(request)
-                : null;
-        ContentCachingResponseWrapper cachingResponse = shouldCacheResponse
-                ? new ContentCachingResponseWrapper(response)
-                : null;
-        CountingResponseWrapper countingResponse = cachingResponse == null
-                ? new CountingResponseWrapper(response)
-                : null;
+        final boolean shouldCacheRequest =
+                client.requestLogger.getConfig().isEnabled()
+                        && client.requestLogger.getConfig().isRequestBodyIncluded()
+                        && requestContentType != null
+                        && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
+                                .anyMatch(
+                                        allowedContentType ->
+                                                requestContentType.startsWith(allowedContentType));
+        final boolean shouldCacheResponse =
+                client.requestLogger.getConfig().isEnabled()
+                        && client.requestLogger.getConfig().isResponseBodyIncluded();
+        ContentCachingRequestWrapper cachingRequest =
+                shouldCacheRequest ? new ContentCachingRequestWrapper(request) : null;
+        ContentCachingResponseWrapper cachingResponse =
+                shouldCacheResponse ? new ContentCachingResponseWrapper(response) : null;
+        CountingResponseWrapper countingResponse =
+                cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
-        final boolean shouldCaptureLogs = client.requestLogger.getConfig().isEnabled()
-                && client.requestLogger.getConfig().isLogCaptureEnabled();
+        final boolean shouldCaptureLogs =
+                client.requestLogger.getConfig().isEnabled()
+                        && client.requestLogger.getConfig().isLogCaptureEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
@@ -87,57 +89,95 @@ public class ApitallyFilter extends OncePerRequestFilter {
             exception = e;
             throw e;
         } finally {
-            final List<LogRecord> capturedLogs = shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
+            final List<LogRecord> capturedLogs =
+                    shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
             final long responseTimeInMillis = System.currentTimeMillis() - startTime;
-            final String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+            final String path =
+                    (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
 
             // Get request and response body
-            final byte[] requestBody = cachingRequest != null ? cachingRequest.getContentAsByteArray() : new byte[0];
-            final byte[] responseBody = cachingResponse != null ? cachingResponse.getContentAsByteArray() : new byte[0];
+            final byte[] requestBody =
+                    cachingRequest != null ? cachingRequest.getContentAsByteArray() : new byte[0];
+            final byte[] responseBody =
+                    cachingResponse != null ? cachingResponse.getContentAsByteArray() : new byte[0];
             if (cachingResponse != null) {
                 cachingResponse.copyBodyToResponse();
             }
 
             try {
                 // Register consumer and get consumer identifier
-                final Consumer consumer = ConsumerRegistry.consumerFromObject(request.getAttribute("apitallyConsumer"));
+                final Consumer consumer =
+                        ConsumerRegistry.consumerFromObject(
+                                request.getAttribute("apitallyConsumer"));
                 client.consumerRegistry.addOrUpdateConsumer(consumer);
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 
                 // Get captured exception
                 Object capturedException = request.getAttribute("apitallyCapturedException");
-                if (exception == null && capturedException != null && capturedException instanceof Exception) {
+                if (exception == null
+                        && capturedException != null
+                        && capturedException instanceof Exception) {
                     exception = (Exception) capturedException;
                 }
 
                 // Add request to counter
                 final long requestContentLength = request.getContentLengthLong();
-                final long requestSize = requestContentLength >= 0 ? requestContentLength
-                        : cachingRequest != null ? requestBody.length : -1;
+                final long requestSize =
+                        requestContentLength >= 0
+                                ? requestContentLength
+                                : cachingRequest != null ? requestBody.length : -1;
                 final long responseContentLength = getResponseContentLength(response);
-                final long responseSize = responseContentLength >= 0 ? responseContentLength
-                        : cachingResponse != null ? responseBody.length
-                                : countingResponse != null ? countingResponse.getByteCount() : -1;
+                final long responseSize =
+                        responseContentLength >= 0
+                                ? responseContentLength
+                                : cachingResponse != null
+                                        ? responseBody.length
+                                        : countingResponse != null
+                                                ? countingResponse.getByteCount()
+                                                : -1;
                 client.requestCounter.addRequest(
-                        consumerIdentifier, request.getMethod(), path, response.getStatus(), responseTimeInMillis,
-                        requestSize, responseSize);
+                        consumerIdentifier,
+                        request.getMethod(),
+                        path,
+                        response.getStatus(),
+                        responseTimeInMillis,
+                        requestSize,
+                        responseSize);
 
                 // Log request
                 if (client.requestLogger.isEnabled()) {
-                    final Header[] requestHeaders = Collections.list(request.getHeaderNames()).stream()
-                            .flatMap(name -> Collections.list(request.getHeaders(name)).stream()
-                                    .map(value -> new Header(name, value)))
-                            .toArray(Header[]::new);
-                    final Header[] responseHeaders = response.getHeaderNames().stream()
-                            .flatMap(name -> response.getHeaders(name).stream()
-                                    .map(value -> new Header(name, value)))
-                            .toArray(Header[]::new);
+                    final Header[] requestHeaders =
+                            Collections.list(request.getHeaderNames()).stream()
+                                    .flatMap(
+                                            name ->
+                                                    Collections.list(request.getHeaders(name))
+                                                            .stream()
+                                                            .map(value -> new Header(name, value)))
+                                    .toArray(Header[]::new);
+                    final Header[] responseHeaders =
+                            response.getHeaderNames().stream()
+                                    .flatMap(
+                                            name ->
+                                                    response.getHeaders(name).stream()
+                                                            .map(value -> new Header(name, value)))
+                                    .toArray(Header[]::new);
 
                     client.requestLogger.logRequest(
-                            new Request(startTime / 1000.0, consumerIdentifier, request.getMethod(), path,
-                                    request.getRequestURL().toString(), requestHeaders, requestSize, requestBody),
-                            new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
-                                    responseSize, responseBody),
+                            new Request(
+                                    startTime / 1000.0,
+                                    consumerIdentifier,
+                                    request.getMethod(),
+                                    path,
+                                    request.getRequestURL().toString(),
+                                    requestHeaders,
+                                    requestSize,
+                                    requestBody),
+                            new Response(
+                                    response.getStatus(),
+                                    responseTimeInMillis / 1000.0,
+                                    responseHeaders,
+                                    responseSize,
+                                    responseBody),
                             exception,
                             capturedLogs);
                 }
@@ -147,16 +187,25 @@ public class ApitallyFilter extends OncePerRequestFilter {
                     if (capturedException instanceof ConstraintViolationException e) {
                         for (ConstraintViolation<?> violation : e.getConstraintViolations()) {
                             client.validationErrorCounter.addValidationError(
-                                    consumerIdentifier, request.getMethod(), path,
-                                    violation.getPropertyPath().toString(), violation.getMessage(),
-                                    violation.getConstraintDescriptor().getAnnotation().annotationType()
+                                    consumerIdentifier,
+                                    request.getMethod(),
+                                    path,
+                                    violation.getPropertyPath().toString(),
+                                    violation.getMessage(),
+                                    violation
+                                            .getConstraintDescriptor()
+                                            .getAnnotation()
+                                            .annotationType()
                                             .getSimpleName());
                         }
                     } else if (capturedException instanceof MethodArgumentNotValidException e) {
                         for (FieldError error : e.getBindingResult().getFieldErrors()) {
                             client.validationErrorCounter.addValidationError(
-                                    consumerIdentifier, request.getMethod(), path,
-                                    error.getObjectName() + "." + error.getField(), error.getDefaultMessage(),
+                                    consumerIdentifier,
+                                    request.getMethod(),
+                                    path,
+                                    error.getObjectName() + "." + error.getField(),
+                                    error.getDefaultMessage(),
                                     error.getCode());
                         }
                     }
@@ -164,7 +213,8 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
                 // Add server error to counter
                 if (response.getStatus() == 500 && exception != null) {
-                    client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path, exception);
+                    client.serverErrorCounter.addServerError(
+                            consumerIdentifier, request.getMethod(), path, exception);
                 }
             } catch (Exception e) {
                 logger.error("Error in Apitally filter", e);

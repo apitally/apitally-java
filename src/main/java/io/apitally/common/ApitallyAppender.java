@@ -1,16 +1,13 @@
 package io.apitally.common;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.slf4j.LoggerFactory;
-
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
-
 import io.apitally.common.dto.LogRecord;
+import java.util.ArrayList;
+import java.util.List;
+import org.slf4j.LoggerFactory;
 
 public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
     private static final String NAME = "ApitallyAppender";

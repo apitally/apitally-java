@@ -1,8 +1,7 @@
 package io.apitally.common.dto;
 
-import java.util.Map;
-
 import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Map;
 
 public final class Requests {
     private final String consumer;
@@ -16,9 +15,17 @@ public final class Requests {
     private final Map<Integer, Integer> requestSizes;
     private final Map<Integer, Integer> responseSizes;
 
-    public Requests(String consumer, String method, String path, int statusCode, int requestCount,
-            long requestSizeSum, long responseSizeSum, Map<Integer, Integer> responseTimes,
-            Map<Integer, Integer> requestSizes, Map<Integer, Integer> responseSizes) {
+    public Requests(
+            String consumer,
+            String method,
+            String path,
+            int statusCode,
+            int requestCount,
+            long requestSizeSum,
+            long responseSizeSum,
+            Map<Integer, Integer> responseTimes,
+            Map<Integer, Integer> requestSizes,
+            Map<Integer, Integer> responseSizes) {
         this.consumer = consumer;
         this.method = method;
         this.path = path;

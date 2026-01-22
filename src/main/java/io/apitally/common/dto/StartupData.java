@@ -1,10 +1,9 @@
 package io.apitally.common.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class StartupData extends BaseDto {
     private final UUID instanceUuid;
@@ -13,7 +12,8 @@ public class StartupData extends BaseDto {
     private final Map<String, String> versions;
     private final String client;
 
-    public StartupData(UUID instanceUuid, List<Path> paths, Map<String, String> versions, String client) {
+    public StartupData(
+            UUID instanceUuid, List<Path> paths, Map<String, String> versions, String client) {
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();
         this.paths = paths;
