@@ -47,10 +47,7 @@ public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
     @Override
     protected void append(ILoggingEvent event) {
         List<LogRecord> buffer = logBuffer.get();
-        if (buffer == null) {
-            return;
-        }
-        if (buffer.size() >= MAX_BUFFER_SIZE) {
+        if (buffer == null || buffer.size() >= MAX_BUFFER_SIZE) {
             return;
         }
 

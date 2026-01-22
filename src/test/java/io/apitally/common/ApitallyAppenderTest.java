@@ -41,14 +41,7 @@ public class ApitallyAppenderTest {
     @Test
     void testStartCaptureAndEndCapture() {
         ApitallyAppender.startCapture();
-
-        LoggingEvent event = new LoggingEvent();
-        event.setLoggerName("test.logger");
-        event.setLevel(Level.INFO);
-        event.setMessage("Test message");
-        event.setTimeStamp(System.currentTimeMillis());
-        appender.doAppend(event);
-
+        appender.doAppend(createLoggingEvent("Test message"));
         List<LogRecord> logs = ApitallyAppender.endCapture();
 
         assertNotNull(logs);
@@ -60,30 +53,18 @@ public class ApitallyAppenderTest {
 
     @Test
     void testNoCaptureWhenNotStarted() {
-        LoggingEvent event = new LoggingEvent();
-        event.setLoggerName("test.logger");
-        event.setLevel(Level.INFO);
-        event.setMessage("Test message");
-        event.setTimeStamp(System.currentTimeMillis());
-        appender.doAppend(event);
-
+        appender.doAppend(createLoggingEvent("Test message"));
         List<LogRecord> logs = ApitallyAppender.endCapture();
+
         assertNull(logs);
     }
 
     @Test
     void testMaxBufferSizeLimit() {
         ApitallyAppender.startCapture();
-
         for (int i = 0; i < 1100; i++) {
-            LoggingEvent event = new LoggingEvent();
-            event.setLoggerName("test.logger");
-            event.setLevel(Level.INFO);
-            event.setMessage("Message " + i);
-            event.setTimeStamp(System.currentTimeMillis());
-            appender.doAppend(event);
+            appender.doAppend(createLoggingEvent("Message " + i));
         }
-
         List<LogRecord> logs = ApitallyAppender.endCapture();
 
         assertNotNull(logs);
@@ -93,20 +74,21 @@ public class ApitallyAppenderTest {
     @Test
     void testMessageTruncation() {
         ApitallyAppender.startCapture();
-
-        String longMessage = "A".repeat(3000);
-        LoggingEvent event = new LoggingEvent();
-        event.setLoggerName("test.logger");
-        event.setLevel(Level.INFO);
-        event.setMessage(longMessage);
-        event.setTimeStamp(System.currentTimeMillis());
-        appender.doAppend(event);
-
+        appender.doAppend(createLoggingEvent("A".repeat(3000)));
         List<LogRecord> logs = ApitallyAppender.endCapture();
 
         assertNotNull(logs);
         assertEquals(1, logs.size());
         assertTrue(logs.get(0).getMessage().length() <= 2048);
         assertTrue(logs.get(0).getMessage().endsWith("... (truncated)"));
+    }
+
+    private LoggingEvent createLoggingEvent(String message) {
+        LoggingEvent event = new LoggingEvent();
+        event.setLoggerName("test.logger");
+        event.setLevel(Level.INFO);
+        event.setMessage(message);
+        event.setTimeStamp(System.currentTimeMillis());
+        return event;
     }
 }
