@@ -20,7 +20,9 @@ public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
     private static final ThreadLocal<List<LogRecord>> logBuffer = new ThreadLocal<>();
 
     public static synchronized void register() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        if (!(LoggerFactory.getILoggerFactory() instanceof LoggerContext loggerContext)) {
+            return;
+        }
         Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
 
         if (rootLogger.getAppender(NAME) != null) {
