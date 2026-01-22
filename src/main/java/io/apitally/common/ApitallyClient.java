@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executors;
@@ -60,7 +59,7 @@ public class ApitallyClient {
 
     private final String clientId;
     private final String env;
-    private final UUID instanceUuid;
+    private final InstanceLock instanceLock;
     private final HttpClient httpClient;
     private ScheduledExecutorService scheduler;
     private ScheduledFuture<?> syncTask;
@@ -80,7 +79,7 @@ public class ApitallyClient {
     public ApitallyClient(String clientId, String env, RequestLoggingConfig requestLoggingConfig) {
         this.clientId = clientId;
         this.env = env;
-        this.instanceUuid = java.util.UUID.randomUUID();
+        this.instanceLock = InstanceLock.create(clientId, env);
         this.httpClient = createHttpClient();
 
         this.requestCounter = new RequestCounter();
@@ -115,7 +114,7 @@ public class ApitallyClient {
     }
 
     public void setStartupData(List<Path> paths, Map<String, String> versions, String client) {
-        startupData = new StartupData(instanceUuid, paths, versions, client);
+        startupData = new StartupData(instanceLock.getInstanceUuid(), paths, versions, client);
     }
 
     private void sendStartupData() {
@@ -142,7 +141,7 @@ public class ApitallyClient {
 
     private void sendSyncData() {
         SyncData data = new SyncData(
-                instanceUuid,
+                instanceLock.getInstanceUuid(),
                 requestCounter.getAndResetRequests(),
                 validationErrorCounter.getAndResetValidationErrors(),
                 serverErrorCounter.getAndResetServerErrors(),
@@ -314,6 +313,7 @@ public class ApitallyClient {
                     scheduler.shutdownNow();
                 }
             }
+            instanceLock.close();
         } catch (InterruptedException e) {
             if (scheduler != null) {
                 scheduler.shutdownNow();
