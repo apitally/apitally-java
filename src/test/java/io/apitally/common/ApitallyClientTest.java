@@ -3,7 +3,7 @@ package io.apitally.common;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.timeout;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,10 +77,8 @@ class ApitallyClientTest {
         clientSpy.setStartupData(paths, versions, "java:test");
         clientSpy.startSync();
 
-        delay(100);
-
         ArgumentCaptor<HttpRequest> requestCaptor = ArgumentCaptor.forClass(HttpRequest.class);
-        verify(clientSpy, times(3)).sendHubRequest(requestCaptor.capture());
+        verify(clientSpy, timeout(5000).times(3)).sendHubRequest(requestCaptor.capture());
         List<HttpRequest> capturedRequests = requestCaptor.getAllValues();
         assertTrue(capturedRequests.stream().anyMatch(
                 r -> r.uri().toString().contains("/startup")));
@@ -90,13 +88,5 @@ class ApitallyClientTest {
                 r -> r.uri().toString().contains("/log")));
 
         clientSpy.stopSync();
-    }
-
-    private void delay(long millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 }
