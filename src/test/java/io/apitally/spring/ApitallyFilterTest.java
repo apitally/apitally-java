@@ -3,8 +3,13 @@ package io.apitally.spring;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import java.io.IOException;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,7 +30,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import ch.qos.logback.classic.LoggerContext;
+
 import io.apitally.common.ApitallyClient;
+import io.apitally.common.RequestLogger;
+import io.apitally.common.TempGzipFile;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Path;
 import io.apitally.common.dto.Requests;
@@ -44,8 +53,19 @@ class ApitallyFilterTest {
     static class TestConfig {
         @Bean
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
+            registerLogAppender();
             return new ApitallyClient(properties.getClientId(), properties.getEnv(),
                     properties.getRequestLogging());
+        }
+
+        private void registerLogAppender() {
+            LoggerContext loggerContext = (LoggerContext) LoggerFactory
+                    .getILoggerFactory();
+            io.apitally.common.ApitallyAppender appender = new io.apitally.common.ApitallyAppender();
+            appender.setContext(loggerContext);
+            appender.setName("ApitallyAppender");
+            appender.start();
+            loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(appender);
         }
 
         @Bean
@@ -76,7 +96,7 @@ class ApitallyFilterTest {
         apitallyClient.requestCounter.getAndResetRequests();
         apitallyClient.validationErrorCounter.getAndResetValidationErrors();
         apitallyClient.serverErrorCounter.getAndResetServerErrors();
-        apitallyClient.consumerRegistry.getAndResetConsumers();
+        apitallyClient.consumerRegistry.reset();
         apitallyClient.requestLogger.getConfig().setEnabled(true);
     }
 
@@ -109,27 +129,23 @@ class ApitallyFilterTest {
                         && r.getPath().equals("/items")
                         && r.getStatusCode() == 200
                         && r.getRequestCount() == 1
-                        && r.getResponseSizeSum() > 0),
-                "GET /items request counted correctly");
+                        && r.getResponseSizeSum() > 0));
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items/{id}")
                         && r.getStatusCode() == 200
-                        && r.getRequestCount() == 2),
-                "GET /items/{id} requests counted correctly");
+                        && r.getRequestCount() == 2));
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/items/{id}")
                         && r.getStatusCode() == 400
-                        && r.getRequestCount() == 1),
-                "GET /items/0 request counted correctly");
+                        && r.getRequestCount() == 1));
         assertTrue(requests.stream().anyMatch(
                 r -> r.getMethod().equals("GET")
                         && r.getPath().equals("/throw")
                         && r.getStatusCode() == 500
                         && r.getRequestCount() == 1
-                        && r.getResponseSizeSum() == 0),
-                "GET /throw request counted correctly");
+                        && r.getResponseSizeSum() == 0));
 
         requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(0, requests.size(), "No requests counted after reset");
@@ -233,6 +249,76 @@ class ApitallyFilterTest {
         Map<String, String> versions = ApitallyUtils.getVersions();
         logger.info("Versions: {}", versions);
         assertEquals(3, versions.size());
+    }
+
+    @Test
+    void testRequestLogger() {
+        apitallyClient.requestLogger.getConfig().setEnabled(true);
+        apitallyClient.requestLogger.getConfig().setRequestBodyIncluded(true);
+        apitallyClient.requestLogger.getConfig().setResponseBodyIncluded(true);
+        apitallyClient.requestLogger.getConfig().setLogCaptureEnabled(true);
+        apitallyClient.requestLogger.clear();
+
+        ResponseEntity<String> response = restTemplate.getForEntity("/items", String.class);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<String> request = new HttpEntity<>("{\"id\": 1, \"name\": \"bob\"}", headers);
+        response = restTemplate.postForEntity("/items", request, String.class);
+        assertTrue(response.getStatusCode().is2xxSuccessful());
+
+        delay(100);
+
+        JsonNode[] items = getLoggedItems(apitallyClient.requestLogger);
+        assertEquals(2, items.length);
+
+        // Verify GET request logging
+        JsonNode firstItem = items[0];
+        assertEquals("GET", firstItem.get("request").get("method").asText());
+        assertTrue(firstItem.get("request").get("url").asText().contains("/items"));
+        assertEquals(200, firstItem.get("response").get("statusCode").asInt());
+        String responseBody = new String(Base64.getDecoder().decode(
+                firstItem.get("response").get("body").asText()));
+        assertTrue(responseBody.contains("alice"));
+
+        // Verify application logs were captured
+        assertTrue(firstItem.has("logs"));
+        assertTrue(firstItem.get("logs").isArray());
+        assertTrue(firstItem.get("logs").size() > 0);
+        assertTrue(firstItem.get("logs").get(0).get("message").asText().contains("Getting items"));
+
+        // Verify POST request logging with request body
+        JsonNode secondItem = items[1];
+        assertEquals("POST", secondItem.get("request").get("method").asText());
+        assertTrue(secondItem.get("request").get("url").asText().contains("/items"));
+        String requestBody = new String(Base64.getDecoder().decode(
+                secondItem.get("request").get("body").asText()));
+        assertTrue(requestBody.contains("bob"));
+    }
+
+    private JsonNode[] getLoggedItems(RequestLogger requestLogger) {
+        requestLogger.maintain();
+        requestLogger.rotateFile();
+
+        TempGzipFile logFile = requestLogger.getFile();
+        if (logFile == null) {
+            return new JsonNode[0];
+        }
+
+        try {
+            List<String> lines = logFile.readDecompressedLines();
+            JsonNode[] items = new JsonNode[lines.size()];
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            for (int i = 0; i < lines.size(); i++) {
+                items[i] = objectMapper.readTree(lines.get(i));
+            }
+
+            return items;
+        } catch (IOException e) {
+            throw new AssertionError("Failed to read gzipped file", e);
+        }
     }
 
     private void delay(long millis) {

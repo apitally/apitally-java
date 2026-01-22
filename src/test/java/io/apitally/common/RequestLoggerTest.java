@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.apitally.common.dto.Header;
+import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
 
@@ -66,7 +67,9 @@ public class RequestLoggerTest {
                 13L,
                 "{\"items\": []}".getBytes());
         Exception exception = new Exception("test");
-        requestLogger.logRequest(request, response, exception);
+        List<LogRecord> logs = List.of(
+                new LogRecord(System.currentTimeMillis() / 1000.0, "test.Logger", "INFO", "Test log message"));
+        requestLogger.logRequest(request, response, exception, logs);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -99,6 +102,13 @@ public class RequestLoggerTest {
         assertEquals("Exception", exceptionNode.get("type").asText());
         assertEquals("test", exceptionNode.get("message").asText());
         assertTrue(exceptionNode.get("stackTrace").asText().contains("test"));
+
+        JsonNode logsNode = jsonNode.get("logs");
+        assertTrue(logsNode.isArray());
+        assertEquals(1, logsNode.size());
+        assertEquals("test.Logger", logsNode.get(0).get("logger").asText());
+        assertEquals("INFO", logsNode.get(0).get("level").asText());
+        assertEquals("Test log message", logsNode.get(0).get("message").asText());
 
         requestLogger.clear();
 
@@ -138,7 +148,7 @@ public class RequestLoggerTest {
                 16L,
                 "{\"key\": \"value\"}".getBytes());
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -176,7 +186,7 @@ public class RequestLoggerTest {
                 13L,
                 "{\"items\": []}".getBytes());
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -200,7 +210,7 @@ public class RequestLoggerTest {
                 17L,
                 "{\"healthy\": true}".getBytes());
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -227,7 +237,7 @@ public class RequestLoggerTest {
                 0L,
                 new byte[0]);
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -256,7 +266,7 @@ public class RequestLoggerTest {
                 new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -291,7 +301,7 @@ public class RequestLoggerTest {
                 new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -344,7 +354,7 @@ public class RequestLoggerTest {
                 4L,
                 "test".getBytes());
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -387,7 +397,7 @@ public class RequestLoggerTest {
                 (long) responseBodyJson.getBytes().length,
                 responseBodyJson.getBytes());
 
-        requestLogger.logRequest(request, response, null);
+        requestLogger.logRequest(request, response, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);

@@ -75,4 +75,9 @@ public class ConsumerRegistry {
         updated.clear();
         return data;
     }
+
+    public void reset() {
+        consumers.clear();
+        updated.clear();
+    }
 }
