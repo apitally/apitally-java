@@ -182,6 +182,10 @@ public class RequestLogger {
                 exceptionDto = new ExceptionDto(exception);
             }
 
+            if (!config.isLogCaptureEnabled() && logs != null) {
+                logs = null;
+            }
+
             RequestLogItem item = new RequestLogItem(request, response, exceptionDto, logs);
             pendingWrites.add(item);
 

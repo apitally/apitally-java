@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -67,8 +68,8 @@ public class RequestLoggerTest {
                 13L,
                 "{\"items\": []}".getBytes());
         Exception exception = new Exception("test");
-        List<LogRecord> logs = List.of(
-                new LogRecord(System.currentTimeMillis() / 1000.0, "test.Logger", "INFO", "Test log message"));
+        List<LogRecord> logs = new ArrayList<>();
+        logs.add(new LogRecord(System.currentTimeMillis() / 1000.0, "test.Logger", "INFO", "Test log message"));
         requestLogger.logRequest(request, response, exception, logs);
 
         JsonNode[] items = getLoggedItems(requestLogger);

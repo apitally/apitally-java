@@ -30,8 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import ch.qos.logback.classic.LoggerContext;
-
+import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.TempGzipFile;
@@ -53,19 +52,9 @@ class ApitallyFilterTest {
     static class TestConfig {
         @Bean
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
-            registerLogAppender();
+            ApitallyAppender.register();
             return new ApitallyClient(properties.getClientId(), properties.getEnv(),
                     properties.getRequestLogging());
-        }
-
-        private void registerLogAppender() {
-            LoggerContext loggerContext = (LoggerContext) LoggerFactory
-                    .getILoggerFactory();
-            io.apitally.common.ApitallyAppender appender = new io.apitally.common.ApitallyAppender();
-            appender.setContext(loggerContext);
-            appender.setName("ApitallyAppender");
-            appender.start();
-            loggerContext.getLogger(ch.qos.logback.classic.Logger.ROOT_LOGGER_NAME).addAppender(appender);
         }
 
         @Bean

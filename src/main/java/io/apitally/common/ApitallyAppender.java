@@ -3,16 +3,36 @@ package io.apitally.common;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.LoggerFactory;
+
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 
 import io.apitally.common.dto.LogRecord;
 
 public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
+    private static final String NAME = "ApitallyAppender";
     private static final int MAX_BUFFER_SIZE = 1000;
     private static final int MAX_MESSAGE_LENGTH = 2048;
 
     private static final ThreadLocal<List<LogRecord>> logBuffer = new ThreadLocal<>();
+
+    public static synchronized void register() {
+        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
+        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
+
+        if (rootLogger.getAppender(NAME) != null) {
+            return;
+        }
+
+        ApitallyAppender appender = new ApitallyAppender();
+        appender.setContext(loggerContext);
+        appender.setName(NAME);
+        appender.start();
+        rootLogger.addAppender(appender);
+    }
 
     public static void startCapture() {
         logBuffer.set(new ArrayList<>());

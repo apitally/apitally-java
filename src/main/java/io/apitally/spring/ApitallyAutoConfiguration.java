@@ -3,16 +3,12 @@ package io.apitally.spring;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
-
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.LoggerContext;
 
 import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
@@ -32,21 +28,10 @@ public class ApitallyAutoConfiguration {
         client.startSync();
 
         if (properties.getRequestLogging().isEnabled() && properties.getRequestLogging().isLogCaptureEnabled()) {
-            registerLogAppender();
+            ApitallyAppender.register();
         }
 
         return client;
-    }
-
-    private void registerLogAppender() {
-        LoggerContext loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        ApitallyAppender appender = new ApitallyAppender();
-        appender.setContext(loggerContext);
-        appender.setName("ApitallyAppender");
-        appender.start();
-
-        Logger rootLogger = loggerContext.getLogger(Logger.ROOT_LOGGER_NAME);
-        rootLogger.addAppender(appender);
     }
 
     @Bean
