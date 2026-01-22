@@ -3,6 +3,8 @@ package io.apitally.spring.app;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
@@ -28,14 +30,18 @@ import jakarta.validation.constraints.Size;
 @RestController
 @Validated
 public class TestController {
+    private static final Logger logger = LoggerFactory.getLogger(TestController.class);
+
     @GetMapping("/items")
     public List<TestItem> getItems(HttpServletRequest request,
             @RequestParam(required = false) @Size(min = 2, max = 10) String name) {
+        logger.info("Getting items with filter: {}", name != null ? name : "none");
         ApitallyConsumer consumer = new ApitallyConsumer("tester", "Tester", "Test Group");
         request.setAttribute("apitallyConsumer", consumer);
         List<TestItem> items = new ArrayList<TestItem>();
         items.add(new TestItem(1, "bob"));
         items.add(new TestItem(2, "alice"));
+        logger.debug("Returning {} items", items.size());
         return items;
     }
 

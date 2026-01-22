@@ -2,6 +2,7 @@ package io.apitally.spring;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,13 +14,16 @@ import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
+import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
+import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
@@ -65,8 +69,15 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 ? new CountingResponseWrapper(response)
                 : null;
 
+        final boolean shouldCaptureLogs = client.requestLogger.getConfig().isEnabled()
+                && client.requestLogger.getConfig().isLogCaptureEnabled();
+
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
+
+        if (shouldCaptureLogs) {
+            ApitallyAppender.startCapture();
+        }
 
         try {
             filterChain.doFilter(
@@ -76,6 +87,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
             exception = e;
             throw e;
         } finally {
+            final List<LogRecord> capturedLogs = shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
             final long responseTimeInMillis = System.currentTimeMillis() - startTime;
             final String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
 
@@ -126,7 +138,8 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                     request.getRequestURL().toString(), requestHeaders, requestSize, requestBody),
                             new Response(response.getStatus(), responseTimeInMillis / 1000.0, responseHeaders,
                                     responseSize, responseBody),
-                            exception);
+                            exception,
+                            capturedLogs);
                 }
 
                 // Add validation error to counter

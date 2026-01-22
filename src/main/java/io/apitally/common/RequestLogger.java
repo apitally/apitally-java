@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.apitally.common.dto.ExceptionDto;
 import io.apitally.common.dto.Header;
+import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.RequestLogItem;
 import io.apitally.common.dto.Response;
@@ -147,7 +148,7 @@ public class RequestLogger {
         this.suspendUntil = timestamp;
     }
 
-    public void logRequest(Request request, Response response, Exception exception) {
+    public void logRequest(Request request, Response response, Exception exception, List<LogRecord> logs) {
         if (!enabled || suspendUntil != null && suspendUntil > System.currentTimeMillis()) {
             return;
         }
@@ -181,7 +182,11 @@ public class RequestLogger {
                 exceptionDto = new ExceptionDto(exception);
             }
 
-            RequestLogItem item = new RequestLogItem(request, response, exceptionDto);
+            if (!config.isLogCaptureEnabled() && logs != null) {
+                logs = null;
+            }
+
+            RequestLogItem item = new RequestLogItem(request, response, exceptionDto, logs);
             pendingWrites.add(item);
 
             if (pendingWrites.size() > MAX_PENDING_WRITES) {
@@ -279,6 +284,9 @@ public class RequestLogger {
                 itemNode.set("response", skipEmptyValues(objectMapper.valueToTree(item.getResponse())));
                 if (item.getException() != null) {
                     itemNode.set("exception", objectMapper.valueToTree(item.getException()));
+                }
+                if (item.getLogs() != null && !item.getLogs().isEmpty()) {
+                    itemNode.set("logs", objectMapper.valueToTree(item.getLogs()));
                 }
 
                 String serializedItem = objectMapper.writeValueAsString(itemNode);

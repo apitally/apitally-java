@@ -7,6 +7,6 @@ public class RequestLoggingCallbacks implements io.apitally.common.RequestLoggin
 
     @Override
     public boolean shouldExclude(Request request, Response response) {
-        return true;
+        return false;
     }
 }

@@ -11,6 +11,7 @@ public class RequestLoggingConfig {
     private boolean responseHeadersIncluded = true;
     private boolean responseBodyIncluded = false;
     private boolean exceptionIncluded = true;
+    private boolean logCaptureEnabled = false;
     private List<String> queryParamMaskPatterns = new ArrayList<>();
     private List<String> headerMaskPatterns = new ArrayList<>();
     private List<String> bodyFieldMaskPatterns = new ArrayList<>();
@@ -71,6 +72,14 @@ public class RequestLoggingConfig {
 
     public void setExceptionIncluded(boolean exceptionIncluded) {
         this.exceptionIncluded = exceptionIncluded;
+    }
+
+    public boolean isLogCaptureEnabled() {
+        return logCaptureEnabled;
+    }
+
+    public void setLogCaptureEnabled(boolean logCaptureEnabled) {
+        this.logCaptureEnabled = logCaptureEnabled;
     }
 
     public List<String> getQueryParamMaskPatterns() {

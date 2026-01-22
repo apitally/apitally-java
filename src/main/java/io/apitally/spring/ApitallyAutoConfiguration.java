@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.dto.Path;
 
@@ -25,6 +26,11 @@ public class ApitallyAutoConfiguration {
         Map<String, String> versions = ApitallyUtils.getVersions();
         client.setStartupData(paths, versions, "java:spring");
         client.startSync();
+
+        if (properties.getRequestLogging().isEnabled() && properties.getRequestLogging().isLogCaptureEnabled()) {
+            ApitallyAppender.register();
+        }
+
         return client;
     }
 
