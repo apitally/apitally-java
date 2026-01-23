@@ -1,6 +1,9 @@
 package io.apitally.spring.app;
 
 import io.apitally.spring.ApitallyConsumer;
+import io.opentelemetry.api.GlobalOpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.Tracer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
@@ -50,6 +53,11 @@ public class TestController {
 
     @GetMapping("/items/{id}")
     public TestItem getItem(@PathVariable @Min(1) Integer id) {
+        Tracer tracer = GlobalOpenTelemetry.getTracer("test");
+        Span childSpan = tracer.spanBuilder("fetchItemFromDatabase").startSpan();
+        childSpan.setAttribute("item.id", id);
+        childSpan.end();
+
         TestItem item = new TestItem(id, "bob");
         return item;
     }

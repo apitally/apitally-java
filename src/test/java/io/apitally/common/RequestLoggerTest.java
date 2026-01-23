@@ -72,7 +72,7 @@ public class RequestLoggerTest {
                         "test.Logger",
                         "INFO",
                         "Test log message"));
-        requestLogger.logRequest(request, response, exception, logs);
+        requestLogger.logRequest(request, response, exception, logs, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -151,7 +151,7 @@ public class RequestLoggerTest {
         Response response =
                 new Response(200, 0.123, responseHeaders, 16L, "{\"key\": \"value\"}".getBytes());
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -188,7 +188,7 @@ public class RequestLoggerTest {
         Response response =
                 new Response(200, 0.123, new Header[0], 13L, "{\"items\": []}".getBytes());
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -209,7 +209,7 @@ public class RequestLoggerTest {
         Response response =
                 new Response(200, 0.123, new Header[0], 17L, "{\"healthy\": true}".getBytes());
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -233,7 +233,7 @@ public class RequestLoggerTest {
                         new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(0, items.length);
@@ -264,7 +264,7 @@ public class RequestLoggerTest {
                         new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -300,7 +300,7 @@ public class RequestLoggerTest {
                         new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -357,7 +357,7 @@ public class RequestLoggerTest {
                         4L,
                         "test".getBytes());
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
@@ -407,7 +407,7 @@ public class RequestLoggerTest {
                         (long) responseBodyJson.getBytes().length,
                         responseBodyJson.getBytes());
 
-        requestLogger.logRequest(request, response, null, null);
+        requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);

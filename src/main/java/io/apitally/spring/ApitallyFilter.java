@@ -4,11 +4,13 @@ import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
 import io.apitally.common.RequestLogger;
+import io.apitally.common.SpanCollector;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
+import io.apitally.common.dto.SpanData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
@@ -73,6 +75,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
         final boolean shouldCaptureLogs =
                 client.requestLogger.getConfig().isEnabled()
                         && client.requestLogger.getConfig().isLogCaptureEnabled();
+        final boolean shouldCaptureSpans =
+                client.requestLogger.getConfig().isEnabled()
+                        && client.requestLogger.getConfig().isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
@@ -80,6 +85,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
         if (shouldCaptureLogs) {
             ApitallyAppender.startCapture();
         }
+
+        final SpanCollector.SpanHandle spanHandle =
+                shouldCaptureSpans ? client.spanCollector.startCollection() : null;
 
         try {
             filterChain.doFilter(
@@ -89,22 +97,41 @@ public class ApitallyFilter extends OncePerRequestFilter {
             exception = e;
             throw e;
         } finally {
-            final List<LogRecord> capturedLogs =
-                    shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
-            final long responseTimeInMillis = System.currentTimeMillis() - startTime;
-            final String path =
-                    (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-
-            // Get request and response body
-            final byte[] requestBody =
-                    cachingRequest != null ? cachingRequest.getContentAsByteArray() : new byte[0];
-            final byte[] responseBody =
-                    cachingResponse != null ? cachingResponse.getContentAsByteArray() : new byte[0];
-            if (cachingResponse != null) {
-                cachingResponse.copyBodyToResponse();
-            }
-
             try {
+                final long responseTimeInMillis = System.currentTimeMillis() - startTime;
+                final String path =
+                        (String)
+                                request.getAttribute(
+                                        HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+
+                // End span collection and get spans
+                List<SpanData> spans = null;
+                String traceId = null;
+                if (spanHandle != null) {
+                    if (path != null) {
+                        spanHandle.setName(request.getMethod() + " " + path);
+                    }
+                    spans = spanHandle.end();
+                    traceId = spanHandle.getTraceId();
+                }
+
+                // End log capture and get logs
+                final List<LogRecord> capturedLogs =
+                        shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
+
+                // Get request and response body
+                final byte[] requestBody =
+                        cachingRequest != null
+                                ? cachingRequest.getContentAsByteArray()
+                                : new byte[0];
+                final byte[] responseBody =
+                        cachingResponse != null
+                                ? cachingResponse.getContentAsByteArray()
+                                : new byte[0];
+                if (cachingResponse != null) {
+                    cachingResponse.copyBodyToResponse();
+                }
+
                 // Register consumer and get consumer identifier
                 final Consumer consumer =
                         ConsumerRegistry.consumerFromObject(
@@ -179,7 +206,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                     responseSize,
                                     responseBody),
                             exception,
-                            capturedLogs);
+                            capturedLogs,
+                            spans,
+                            traceId);
                 }
 
                 // Add validation error to counter

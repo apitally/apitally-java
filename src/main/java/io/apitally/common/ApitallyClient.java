@@ -69,6 +69,7 @@ public class ApitallyClient {
 
     public final RequestCounter requestCounter;
     public final RequestLogger requestLogger;
+    public final SpanCollector spanCollector;
     public final ValidationErrorCounter validationErrorCounter;
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
@@ -85,6 +86,10 @@ public class ApitallyClient {
 
         this.requestCounter = new RequestCounter();
         this.requestLogger = new RequestLogger(requestLoggingConfig);
+        this.spanCollector =
+                new SpanCollector(
+                        requestLoggingConfig.isEnabled()
+                                && requestLoggingConfig.isTracingEnabled());
         this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
