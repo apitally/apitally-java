@@ -72,6 +72,7 @@ public class ApitallyClient {
     public final ValidationErrorCounter validationErrorCounter;
     public final ServerErrorCounter serverErrorCounter;
     public final ConsumerRegistry consumerRegistry;
+    public final ResourceMonitor resourceMonitor;
 
     private final Queue<SyncData> syncDataQueue = new ConcurrentLinkedQueue<SyncData>();
     private final Random random = new Random();
@@ -87,6 +88,7 @@ public class ApitallyClient {
         this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
+        this.resourceMonitor = new ResourceMonitor();
     }
 
     public boolean isEnabled() {
@@ -149,7 +151,8 @@ public class ApitallyClient {
                         requestCounter.getAndResetRequests(),
                         validationErrorCounter.getAndResetValidationErrors(),
                         serverErrorCounter.getAndResetServerErrors(),
-                        consumerRegistry.getAndResetConsumers());
+                        consumerRegistry.getAndResetConsumers(),
+                        resourceMonitor.getCpuMemoryUsage());
         syncDataQueue.offer(data);
 
         int i = 0;
