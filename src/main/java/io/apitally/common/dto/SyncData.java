@@ -1,6 +1,7 @@
 package io.apitally.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import java.util.UUID;
@@ -13,13 +14,15 @@ public class SyncData extends BaseDto {
     private final List<ValidationErrors> validationErrors;
     private final List<ServerErrors> serverErrors;
     private final List<Consumer> consumers;
+    private final ResourceUsage resources;
 
     public SyncData(
             UUID instanceUuid,
             List<Requests> requests,
             List<ValidationErrors> validationErrors,
             List<ServerErrors> serverErrors,
-            List<Consumer> consumers) {
+            List<Consumer> consumers,
+            ResourceUsage resources) {
         this.timestamp = System.currentTimeMillis() / 1000.0;
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();
@@ -27,6 +30,7 @@ public class SyncData extends BaseDto {
         this.validationErrors = validationErrors;
         this.serverErrors = serverErrors;
         this.consumers = consumers;
+        this.resources = resources;
     }
 
     @JsonProperty("timestamp")
@@ -62,6 +66,12 @@ public class SyncData extends BaseDto {
     @JsonProperty("consumers")
     public List<Consumer> getConsumers() {
         return consumers;
+    }
+
+    @JsonProperty("resources")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public ResourceUsage getResources() {
+        return resources;
     }
 
     @JsonIgnore
