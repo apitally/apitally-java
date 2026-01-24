@@ -60,7 +60,7 @@ Add the following dependency to your `pom.xml` file:
 <dependency>
   <groupId>io.apitally</groupId>
   <artifactId>apitally</artifactId>
-  <version>[0.1.0,)</version>
+  <version>[0.5.0,)</version>
 </dependency>
 ```
 
@@ -84,16 +84,25 @@ public class Application {
 }
 ```
 
-Then add the following properties to your `application.yml` file:
+Then configure Apitally in your `application.yml` file:
 
 ```yaml
 apitally:
   client-id: "your-client-id"
   env: "dev" # or "prod" etc.
+
+  # Optional: configure request logging and tracing
+  request-logging:
+    enabled: true
+    request-headers-included: true
+    request-body-included: true
+    response-body-included: true
+    log-capture-enabled: true
+    tracing-enabled: true
 ```
 
 For further instructions, see our
-[setup guide for Spring Boot](https://docs.apitally.io/frameworks/spring-boot).
+[setup guide for Spring Boot](https://docs.apitally.io/setup-guides/spring-boot).
 
 ## Getting help
 
