@@ -9,8 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.LoggerFactory;
 
-public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
-    private static final String NAME = "ApitallyAppender";
+public class LogAppender extends AppenderBase<ILoggingEvent> {
+    private static final String NAME = "ApitallyLogAppender";
     private static final int MAX_BUFFER_SIZE = 1000;
     private static final int MAX_MESSAGE_LENGTH = 2048;
 
@@ -26,7 +26,7 @@ public class ApitallyAppender extends AppenderBase<ILoggingEvent> {
             return;
         }
 
-        ApitallyAppender appender = new ApitallyAppender();
+        LogAppender appender = new LogAppender();
         appender.setContext(loggerContext);
         appender.setName(NAME);
         appender.start();

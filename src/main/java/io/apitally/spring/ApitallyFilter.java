@@ -1,14 +1,17 @@
 package io.apitally.spring;
 
-import io.apitally.common.ApitallyAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
+import io.apitally.common.LogAppender;
 import io.apitally.common.RequestLogger;
+import io.apitally.common.RequestLoggingConfig;
+import io.apitally.common.SpanCollector;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
+import io.apitally.common.dto.SpanData;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.ServletOutputStream;
@@ -27,6 +30,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -51,18 +55,20 @@ public class ApitallyFilter extends OncePerRequestFilter {
             return;
         }
 
+        RequestLoggingConfig requestLoggingConfig = client.requestLogger.getConfig();
+        final boolean requestLoggingEnabled = requestLoggingConfig.isEnabled();
+
         String requestContentType = request.getContentType();
         final boolean shouldCacheRequest =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isRequestBodyIncluded()
+                requestLoggingEnabled
+                        && requestLoggingConfig.isRequestBodyIncluded()
                         && requestContentType != null
                         && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
                                 .anyMatch(
                                         allowedContentType ->
                                                 requestContentType.startsWith(allowedContentType));
         final boolean shouldCacheResponse =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isResponseBodyIncluded();
+                requestLoggingEnabled && requestLoggingConfig.isResponseBodyIncluded();
         ContentCachingRequestWrapper cachingRequest =
                 shouldCacheRequest ? new ContentCachingRequestWrapper(request) : null;
         ContentCachingResponseWrapper cachingResponse =
@@ -71,15 +77,19 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
         final boolean shouldCaptureLogs =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isLogCaptureEnabled();
+                requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
+        final boolean shouldCaptureSpans =
+                requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
 
         if (shouldCaptureLogs) {
-            ApitallyAppender.startCapture();
+            LogAppender.startCapture();
         }
+
+        final SpanCollector.SpanHandle spanHandle =
+                shouldCaptureSpans ? client.spanCollector.startCollection() : null;
 
         try {
             filterChain.doFilter(
@@ -89,22 +99,45 @@ public class ApitallyFilter extends OncePerRequestFilter {
             exception = e;
             throw e;
         } finally {
-            final List<LogRecord> capturedLogs =
-                    shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
-            final long responseTimeInMillis = System.currentTimeMillis() - startTime;
-            final String path =
-                    (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-
-            // Get request and response body
-            final byte[] requestBody =
-                    cachingRequest != null ? cachingRequest.getContentAsByteArray() : new byte[0];
-            final byte[] responseBody =
-                    cachingResponse != null ? cachingResponse.getContentAsByteArray() : new byte[0];
-            if (cachingResponse != null) {
-                cachingResponse.copyBodyToResponse();
-            }
-
             try {
+                final long responseTimeInMillis = System.currentTimeMillis() - startTime;
+                final String path =
+                        (String)
+                                request.getAttribute(
+                                        HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+
+                // End span collection and get spans
+                List<SpanData> spans = null;
+                String traceId = null;
+                if (spanHandle != null) {
+                    Object handler =
+                            request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+                    if (handler instanceof HandlerMethod handlerMethod) {
+                        String controllerName = handlerMethod.getBeanType().getSimpleName();
+                        String methodName = handlerMethod.getMethod().getName();
+                        spanHandle.setName(controllerName + "." + methodName);
+                    }
+                    spans = spanHandle.end();
+                    traceId = spanHandle.getTraceId();
+                }
+
+                // End log capture and get logs
+                final List<LogRecord> capturedLogs =
+                        shouldCaptureLogs ? LogAppender.endCapture() : null;
+
+                // Get request and response body
+                final byte[] requestBody =
+                        cachingRequest != null
+                                ? cachingRequest.getContentAsByteArray()
+                                : new byte[0];
+                final byte[] responseBody =
+                        cachingResponse != null
+                                ? cachingResponse.getContentAsByteArray()
+                                : new byte[0];
+                if (cachingResponse != null) {
+                    cachingResponse.copyBodyToResponse();
+                }
+
                 // Register consumer and get consumer identifier
                 final Consumer consumer =
                         ConsumerRegistry.consumerFromObject(
@@ -179,7 +212,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                     responseSize,
                                     responseBody),
                             exception,
-                            capturedLogs);
+                            capturedLogs,
+                            spans,
+                            traceId);
                 }
 
                 // Add validation error to counter
