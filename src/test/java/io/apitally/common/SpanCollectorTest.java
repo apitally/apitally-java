@@ -10,6 +10,7 @@ import io.apitally.common.dto.SpanData;
 import io.apitally.spring.ApitallySpanCollector;
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.api.trace.Tracer;
 import java.util.List;
 import java.util.Set;
@@ -108,11 +109,8 @@ class SpanCollectorTest {
     @Test
     void testDoesNotCollectUnrelatedSpans() {
         SpanCollector collector = createAndRegisterCollector(true);
-
-        // Trigger initialization first by starting and ending a collection
-        collector.startCollection().end();
-
         Tracer tracer = GlobalOpenTelemetry.getTracer("test");
+
         Span outsideSpan = tracer.spanBuilder("outsideSpan").startSpan();
         outsideSpan.end();
 
@@ -140,6 +138,7 @@ class SpanCollectorTest {
         Span span = tracer.spanBuilder("testSpan").startSpan();
         span.setAttribute("http.method", "GET");
         span.setAttribute("http.status_code", 200);
+        span.setStatus(StatusCode.OK);
         span.end();
 
         List<SpanData> spans = handle.end();
@@ -154,6 +153,7 @@ class SpanCollectorTest {
         assertTrue(testSpan.getEndTime() > 0);
         assertTrue(testSpan.getEndTime() >= testSpan.getStartTime());
 
+        assertEquals("OK", testSpan.getStatus());
         assertNotNull(testSpan.getAttributes());
         assertEquals("GET", testSpan.getAttributes().get("http.method"));
         assertEquals(200L, testSpan.getAttributes().get("http.status_code"));

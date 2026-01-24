@@ -44,8 +44,9 @@ public class SpanCollector implements SpanProcessor {
         SpanContext spanContext = span.getSpanContext();
         String traceId = spanContext.getTraceId();
 
-        includedSpanIds.put(traceId, ConcurrentHashMap.newKeySet());
-        includedSpanIds.get(traceId).add(spanContext.getSpanId());
+        Set<String> spanIds = ConcurrentHashMap.newKeySet();
+        spanIds.add(spanContext.getSpanId());
+        includedSpanIds.put(traceId, spanIds);
         collectedSpans.put(traceId, new ConcurrentLinkedQueue<>());
 
         return new SpanHandle(traceId, span, scope, this);
@@ -119,15 +120,11 @@ public class SpanCollector implements SpanProcessor {
         SpanContext spanContext = spanData.getSpanContext();
         SpanContext parentSpanContext = spanData.getParentSpanContext();
 
-        String parentSpanId = null;
-        if (parentSpanContext.isValid()) {
-            parentSpanId = parentSpanContext.getSpanId();
-        }
-
-        String status = null;
-        if (spanData.getStatus().getStatusCode() != StatusCode.UNSET) {
-            status = spanData.getStatus().getStatusCode().name();
-        }
+        String parentSpanId = parentSpanContext.isValid() ? parentSpanContext.getSpanId() : null;
+        String status =
+                spanData.getStatus().getStatusCode() != StatusCode.UNSET
+                        ? spanData.getStatus().getStatusCode().name()
+                        : null;
 
         Map<String, Object> attributes = null;
         if (!spanData.getAttributes().isEmpty()) {
@@ -165,18 +162,12 @@ public class SpanCollector implements SpanProcessor {
         }
 
         public void setName(String name) {
-            if (span != null) {
-                span.updateName(name);
-            }
+            span.updateName(name);
         }
 
         public List<SpanData> end() {
-            if (scope != null) {
-                scope.close();
-            }
-            if (span != null) {
-                span.end();
-            }
+            scope.close();
+            span.end();
             return collector.getAndClearSpans(traceId);
         }
     }

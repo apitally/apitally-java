@@ -56,7 +56,7 @@ public class ApitallySpanCollector implements SpanProcessor {
 
     @Override
     public boolean isStartRequired() {
-        return true;
+        return delegate != null && delegate.isStartRequired();
     }
 
     @Override
@@ -68,7 +68,7 @@ public class ApitallySpanCollector implements SpanProcessor {
 
     @Override
     public boolean isEndRequired() {
-        return true;
+        return delegate != null && delegate.isEndRequired();
     }
 
     public SpanCollector.SpanHandle startCollection() {

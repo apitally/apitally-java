@@ -4,6 +4,7 @@ import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
 import io.apitally.common.LogAppender;
 import io.apitally.common.RequestLogger;
+import io.apitally.common.RequestLoggingConfig;
 import io.apitally.common.SpanCollector;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
@@ -54,18 +55,20 @@ public class ApitallyFilter extends OncePerRequestFilter {
             return;
         }
 
+        RequestLoggingConfig requestLoggingConfig = client.requestLogger.getConfig();
+        final boolean requestLoggingEnabled = requestLoggingConfig.isEnabled();
+
         String requestContentType = request.getContentType();
         final boolean shouldCacheRequest =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isRequestBodyIncluded()
+                requestLoggingEnabled
+                        && requestLoggingConfig.isRequestBodyIncluded()
                         && requestContentType != null
                         && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
                                 .anyMatch(
                                         allowedContentType ->
                                                 requestContentType.startsWith(allowedContentType));
         final boolean shouldCacheResponse =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isResponseBodyIncluded();
+                requestLoggingEnabled && requestLoggingConfig.isResponseBodyIncluded();
         ContentCachingRequestWrapper cachingRequest =
                 shouldCacheRequest ? new ContentCachingRequestWrapper(request) : null;
         ContentCachingResponseWrapper cachingResponse =
@@ -74,11 +77,9 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
         final boolean shouldCaptureLogs =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isLogCaptureEnabled();
+                requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
         final boolean shouldCaptureSpans =
-                client.requestLogger.getConfig().isEnabled()
-                        && client.requestLogger.getConfig().isTracingEnabled();
+                requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();

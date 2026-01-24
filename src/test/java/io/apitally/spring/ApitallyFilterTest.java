@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -332,7 +333,7 @@ class ApitallyFilterTest {
         assertTrue(firstItem.get("spans").isArray());
         assertTrue(firstItem.get("spans").size() >= 2); // root span + child span
         assertTrue(
-                java.util.stream.StreamSupport.stream(firstItem.get("spans").spliterator(), false)
+                StreamSupport.stream(firstItem.get("spans").spliterator(), false)
                         .anyMatch(span -> span.get("name").asText().equals("fetchItems")));
 
         // Verify POST request logging with request body
