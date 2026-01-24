@@ -52,8 +52,13 @@ class ApitallyFilterTest {
         @Bean
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
             LogAppender.register();
-            return new ApitallyClient(
-                    properties.getClientId(), properties.getEnv(), properties.getRequestLogging());
+            ApitallyClient client =
+                    new ApitallyClient(
+                            properties.getClientId(),
+                            properties.getEnv(),
+                            properties.getRequestLogging());
+            ApitallySpanCollector.getInstance().setDelegate(client.spanCollector);
+            return client;
         }
 
         @Bean
@@ -289,6 +294,7 @@ class ApitallyFilterTest {
         apitallyClient.requestLogger.getConfig().setRequestBodyIncluded(true);
         apitallyClient.requestLogger.getConfig().setResponseBodyIncluded(true);
         apitallyClient.requestLogger.getConfig().setLogCaptureEnabled(true);
+        apitallyClient.requestLogger.getConfig().setTracingEnabled(true);
         apitallyClient.requestLogger.clear();
 
         ResponseEntity<String> response = restTemplate.getForEntity("/items", String.class);
@@ -320,6 +326,14 @@ class ApitallyFilterTest {
         assertTrue(firstItem.get("logs").isArray());
         assertTrue(firstItem.get("logs").size() > 0);
         assertTrue(firstItem.get("logs").get(0).get("message").asText().contains("Getting items"));
+
+        // Verify spans were captured
+        assertTrue(firstItem.has("spans"));
+        assertTrue(firstItem.get("spans").isArray());
+        assertTrue(firstItem.get("spans").size() >= 2); // root span + child span
+        assertTrue(
+                java.util.stream.StreamSupport.stream(firstItem.get("spans").spliterator(), false)
+                        .anyMatch(span -> span.get("name").asText().equals("fetchItems")));
 
         // Verify POST request logging with request body
         JsonNode secondItem = items[1];
