@@ -36,44 +36,35 @@ public class RequestLogger {
     private static final int MAX_FILE_SIZE = 1_000_000; // 1 MB (compressed)
     private static final int MAX_FILES = 50;
     private static final int MAX_PENDING_WRITES = 100;
-    private static final byte[] BODY_TOO_LARGE =
-            "<body too large>".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] BODY_TOO_LARGE = "<body too large>".getBytes(StandardCharsets.UTF_8);
     private static final byte[] BODY_MASKED = "<masked>".getBytes(StandardCharsets.UTF_8);
     private static final String MASKED = "******";
-    public static final List<String> ALLOWED_CONTENT_TYPES =
-            Arrays.asList("application/json", "text/plain");
-    private static final Pattern JSON_CONTENT_TYPE_PATTERN =
-            Pattern.compile("\\bjson\\b", Pattern.CASE_INSENSITIVE);
-    private static final List<String> EXCLUDE_PATH_PATTERNS =
-            Arrays.asList(
-                    "/_?healthz?$",
-                    "/_?health[_-]?checks?$",
-                    "/_?heart[_-]?beats?$",
-                    "/ping$",
-                    "/ready$",
-                    "/live$",
-                    "/favicon(?:-[\\w-]+)?\\.(ico|png|svg)$",
-                    "/apple-touch-icon(?:-[\\w-]+)?\\.png$",
-                    "/robots\\.txt$",
-                    "/sitemap\\.xml$",
-                    "/manifest\\.json$",
-                    "/site\\.webmanifest$",
-                    "/service-worker\\.js$",
-                    "/sw\\.js$",
-                    "/\\.well-known/");
+    public static final List<String> ALLOWED_CONTENT_TYPES = Arrays.asList("application/json", "text/plain");
+    private static final Pattern JSON_CONTENT_TYPE_PATTERN = Pattern.compile("\\bjson\\b", Pattern.CASE_INSENSITIVE);
+    private static final List<String> EXCLUDE_PATH_PATTERNS = Arrays.asList(
+            "/_?healthz?$",
+            "/_?health[_-]?checks?$",
+            "/_?heart[_-]?beats?$",
+            "/ping$",
+            "/ready$",
+            "/live$",
+            "/favicon(?:-[\\w-]+)?\\.(ico|png|svg)$",
+            "/apple-touch-icon(?:-[\\w-]+)?\\.png$",
+            "/robots\\.txt$",
+            "/sitemap\\.xml$",
+            "/manifest\\.json$",
+            "/site\\.webmanifest$",
+            "/service-worker\\.js$",
+            "/sw\\.js$",
+            "/\\.well-known/");
     private static final List<String> EXCLUDE_USER_AGENT_PATTERNS =
-            Arrays.asList(
-                    "health[-_ ]?check",
-                    "microsoft-azure-application-lb",
-                    "googlehc",
-                    "kube-probe");
+            Arrays.asList("health[-_ ]?check", "microsoft-azure-application-lb", "googlehc", "kube-probe");
     private static final List<String> MASK_QUERY_PARAM_PATTERNS =
             Arrays.asList("auth", "api-?key", "secret", "token", "password", "pwd");
     private static final List<String> MASK_HEADER_PATTERNS =
             Arrays.asList("auth", "api-?key", "secret", "token", "cookie");
     private static final List<String> MASK_BODY_FIELD_PATTERNS =
-            Arrays.asList(
-                    "password", "pwd", "token", "secret", "auth", "card[-_ ]?number", "ccv", "ssn");
+            Arrays.asList("password", "pwd", "token", "secret", "auth", "card[-_ ]?number", "ccv", "ssn");
     private static final int MAINTAIN_INTERVAL_SECONDS = 1;
 
     private final RequestLoggingConfig config;
@@ -101,13 +92,11 @@ public class RequestLogger {
         this.files = new ConcurrentLinkedDeque<>();
         this.enabled = config.isEnabled();
 
-        this.compiledPathExcludePatterns =
-                compilePatterns(EXCLUDE_PATH_PATTERNS, config.getPathExcludePatterns());
+        this.compiledPathExcludePatterns = compilePatterns(EXCLUDE_PATH_PATTERNS, config.getPathExcludePatterns());
         this.compiledUserAgentExcludePatterns = compilePatterns(EXCLUDE_USER_AGENT_PATTERNS, null);
         this.compiledQueryParamMaskPatterns =
                 compilePatterns(MASK_QUERY_PARAM_PATTERNS, config.getQueryParamMaskPatterns());
-        this.compiledHeaderMaskPatterns =
-                compilePatterns(MASK_HEADER_PATTERNS, config.getHeaderMaskPatterns());
+        this.compiledHeaderMaskPatterns = compilePatterns(MASK_HEADER_PATTERNS, config.getHeaderMaskPatterns());
         this.compiledBodyFieldMaskPatterns =
                 compilePatterns(MASK_BODY_FIELD_PATTERNS, config.getBodyFieldMaskPatterns());
 
@@ -116,8 +105,7 @@ public class RequestLogger {
         }
     }
 
-    private static List<Pattern> compilePatterns(
-            List<String> defaultPatterns, List<String> additionalPatterns) {
+    private static List<Pattern> compilePatterns(List<String> defaultPatterns, List<String> additionalPatterns) {
         List<String> patterns = new ArrayList<>(defaultPatterns);
         if (additionalPatterns != null) {
             patterns.addAll(additionalPatterns);
@@ -163,16 +151,14 @@ public class RequestLogger {
             if (shouldExcludePath(path) || shouldExcludeUserAgent(userAgent)) {
                 return;
             }
-            if (config.getCallbacks() != null
-                    && config.getCallbacks().shouldExclude(request, response)) {
+            if (config.getCallbacks() != null && config.getCallbacks().shouldExclude(request, response)) {
                 return;
             }
 
             if (!config.isRequestBodyIncluded() || !hasSupportedContentType(request.getHeaders())) {
                 request.setBody(null);
             }
-            if (!config.isResponseBodyIncluded()
-                    || !hasSupportedContentType(response.getHeaders())) {
+            if (!config.isResponseBodyIncluded() || !hasSupportedContentType(response.getHeaders())) {
                 response.setBody(null);
             }
 
@@ -190,8 +176,7 @@ public class RequestLogger {
                 traceId = null;
             }
 
-            RequestLogItem item =
-                    new RequestLogItem(request, response, exceptionDto, logs, spans, traceId);
+            RequestLogItem item = new RequestLogItem(request, response, exceptionDto, logs, spans, traceId);
             pendingWrites.add(item);
 
             if (pendingWrites.size() > MAX_PENDING_WRITES) {
@@ -264,13 +249,12 @@ public class RequestLogger {
                 } else if (query != null) {
                     query = maskQueryParams(query);
                 }
-                request.setUrl(
-                        new java.net.URL(
-                                        url.getProtocol(),
-                                        url.getHost(),
-                                        url.getPort(),
-                                        url.getPath() + (query != null ? "?" + query : ""))
-                                .toString());
+                request.setUrl(new java.net.URL(
+                                url.getProtocol(),
+                                url.getHost(),
+                                url.getPort(),
+                                url.getPath() + (query != null ? "?" + query : ""))
+                        .toString());
             } catch (MalformedURLException e) {
                 // Keep original URL if malformed
             }
@@ -292,10 +276,8 @@ public class RequestLogger {
 
                 ObjectNode itemNode = objectMapper.createObjectNode();
                 itemNode.put("uuid", item.getUuid());
-                itemNode.set(
-                        "request", skipEmptyValues(objectMapper.valueToTree(item.getRequest())));
-                itemNode.set(
-                        "response", skipEmptyValues(objectMapper.valueToTree(item.getResponse())));
+                itemNode.set("request", skipEmptyValues(objectMapper.valueToTree(item.getRequest())));
+                itemNode.set("response", skipEmptyValues(objectMapper.valueToTree(item.getResponse())));
                 if (item.getException() != null) {
                     itemNode.set("exception", objectMapper.valueToTree(item.getException()));
                 }
@@ -375,17 +357,13 @@ public class RequestLogger {
 
     private void startMaintenance() {
         if (scheduler == null) {
-            scheduler =
-                    Executors.newSingleThreadScheduledExecutor(
-                            r -> {
-                                Thread thread = new Thread(r, "apitally-request-logger");
-                                thread.setDaemon(true);
-                                return thread;
-                            });
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "apitally-request-logger");
+                thread.setDaemon(true);
+                return thread;
+            });
         }
-        maintainTask =
-                scheduler.scheduleAtFixedRate(
-                        this::maintain, 0, MAINTAIN_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        maintainTask = scheduler.scheduleAtFixedRate(this::maintain, 0, MAINTAIN_INTERVAL_SECONDS, TimeUnit.SECONDS);
     }
 
     private void stopMaintenance() {
@@ -410,7 +388,8 @@ public class RequestLogger {
         if (path == null || path.isEmpty()) {
             return false;
         }
-        return compiledPathExcludePatterns.stream().anyMatch(p -> p.matcher(path).find());
+        return compiledPathExcludePatterns.stream()
+                .anyMatch(p -> p.matcher(path).find());
     }
 
     private boolean shouldExcludeUserAgent(String userAgent) {
@@ -421,7 +400,8 @@ public class RequestLogger {
     }
 
     private boolean shouldMaskQueryParam(String name) {
-        return compiledQueryParamMaskPatterns.stream().anyMatch(p -> p.matcher(name).find());
+        return compiledQueryParamMaskPatterns.stream()
+                .anyMatch(p -> p.matcher(name).find());
     }
 
     private boolean shouldMaskHeader(String name) {
@@ -429,7 +409,8 @@ public class RequestLogger {
     }
 
     private boolean shouldMaskBodyField(String name) {
-        return compiledBodyFieldMaskPatterns.stream().anyMatch(p -> p.matcher(name).find());
+        return compiledBodyFieldMaskPatterns.stream()
+                .anyMatch(p -> p.matcher(name).find());
     }
 
     private String maskQueryParams(String query) {
@@ -453,13 +434,8 @@ public class RequestLogger {
 
     private List<Header> maskHeaders(Header[] headers) {
         return Arrays.stream(headers)
-                .map(
-                        header ->
-                                new Header(
-                                        header.getName(),
-                                        shouldMaskHeader(header.getName())
-                                                ? MASKED
-                                                : header.getValue()))
+                .map(header ->
+                        new Header(header.getName(), shouldMaskHeader(header.getName()) ? MASKED : header.getValue()))
                 .collect(Collectors.toList());
     }
 
@@ -477,17 +453,13 @@ public class RequestLogger {
     private void maskJsonNode(JsonNode node) {
         if (node.isObject()) {
             ObjectNode objectNode = (ObjectNode) node;
-            objectNode
-                    .fields()
-                    .forEachRemaining(
-                            entry -> {
-                                if (entry.getValue().isTextual()
-                                        && shouldMaskBodyField(entry.getKey())) {
-                                    objectNode.put(entry.getKey(), MASKED);
-                                } else {
-                                    maskJsonNode(entry.getValue());
-                                }
-                            });
+            objectNode.fields().forEachRemaining(entry -> {
+                if (entry.getValue().isTextual() && shouldMaskBodyField(entry.getKey())) {
+                    objectNode.put(entry.getKey(), MASKED);
+                } else {
+                    maskJsonNode(entry.getValue());
+                }
+            });
         } else if (node.isArray()) {
             node.forEach(this::maskJsonNode);
         }
@@ -495,13 +467,13 @@ public class RequestLogger {
 
     private boolean hasSupportedContentType(Header[] headers) {
         String contentType = findHeader(headers, "content-type");
-        return contentType != null
-                && ALLOWED_CONTENT_TYPES.stream().anyMatch(contentType::startsWith);
+        return contentType != null && ALLOWED_CONTENT_TYPES.stream().anyMatch(contentType::startsWith);
     }
 
     private boolean hasJsonContentType(Header[] headers) {
         String contentType = findHeader(headers, "content-type");
-        return contentType != null && JSON_CONTENT_TYPE_PATTERN.matcher(contentType).find();
+        return contentType != null
+                && JSON_CONTENT_TYPE_PATTERN.matcher(contentType).find();
     }
 
     private String findHeader(Header[] headers, String name) {
@@ -514,21 +486,18 @@ public class RequestLogger {
 
     private ObjectNode skipEmptyValues(ObjectNode node) {
         ObjectNode result = objectMapper.createObjectNode();
-        node.fields()
-                .forEachRemaining(
-                        entry -> {
-                            if (entry.getValue().isNull()) {
-                                return;
-                            }
-                            if (entry.getValue().isArray() && entry.getValue().size() == 0) {
-                                return;
-                            }
-                            if (entry.getValue().isTextual()
-                                    && entry.getValue().asText().isEmpty()) {
-                                return;
-                            }
-                            result.set(entry.getKey(), entry.getValue());
-                        });
+        node.fields().forEachRemaining(entry -> {
+            if (entry.getValue().isNull()) {
+                return;
+            }
+            if (entry.getValue().isArray() && entry.getValue().size() == 0) {
+                return;
+            }
+            if (entry.getValue().isTextual() && entry.getValue().asText().isEmpty()) {
+                return;
+            }
+            result.set(entry.getKey(), entry.getValue());
+        });
         return result;
     }
 }

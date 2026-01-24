@@ -20,8 +20,7 @@ public class ApitallyProperties {
 
     @Pattern(
             regexp = "^[\\w-]{1,32}$",
-            message =
-                    "Env must be 1-32 characters long and contain only word characters and hyphens")
+            message = "Env must be 1-32 characters long and contain only word characters and hyphens")
     private String env = "default";
 
     private RequestLoggingConfig requestLogging = new RequestLoggingConfig();
@@ -63,9 +62,8 @@ public class ApitallyProperties {
                 try {
                     Class<?> clazz = Class.forName(callbacksClass);
                     if (RequestLoggingCallbacks.class.isAssignableFrom(clazz)) {
-                        setCallbacks(
-                                (RequestLoggingCallbacks)
-                                        clazz.getDeclaredConstructor().newInstance());
+                        setCallbacks((RequestLoggingCallbacks)
+                                clazz.getDeclaredConstructor().newInstance());
                     }
                 } catch (ReflectiveOperationException e) {
                     logger.error("Failed to initialize request logging callbacks", e);

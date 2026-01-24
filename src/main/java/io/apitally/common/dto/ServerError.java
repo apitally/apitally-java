@@ -18,12 +18,7 @@ public class ServerError {
     private final String stackTraceString;
 
     public ServerError(
-            String consumer,
-            String method,
-            String path,
-            String type,
-            String message,
-            StackTraceElement[] stackTrace) {
+            String consumer, String method, String path, String type, String message, StackTraceElement[] stackTrace) {
         this.consumer = consumer;
         this.method = method;
         this.path = path;

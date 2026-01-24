@@ -15,42 +15,24 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 public final class ApitallyUtils {
     public static List<Path> getPaths(RequestMappingHandlerMapping requestMappingHandlerMapping) {
         return requestMappingHandlerMapping.getHandlerMethods().entrySet().stream()
-                .flatMap(
-                        entry -> {
-                            RequestMappingInfo mappingInfo = entry.getKey();
-                            return mappingInfo.getMethodsCondition().getMethods().stream()
-                                    .filter(
-                                            method ->
-                                                    method != RequestMethod.OPTIONS
-                                                            && method != RequestMethod.HEAD)
-                                    .flatMap(
-                                            method -> {
-                                                PathPatternsRequestCondition pathPatterns =
-                                                        mappingInfo.getPathPatternsCondition();
-                                                if (pathPatterns != null
-                                                        && pathPatterns.getPatterns() != null) {
-                                                    return pathPatterns.getPatterns().stream()
-                                                            .map(
-                                                                    pattern ->
-                                                                            new Path(
-                                                                                    method.name(),
-                                                                                    pattern
-                                                                                            .getPatternString()));
-                                                }
-                                                PatternsRequestCondition patterns =
-                                                        mappingInfo.getPatternsCondition();
-                                                if (patterns != null
-                                                        && patterns.getPatterns() != null) {
-                                                    return patterns.getPatterns().stream()
-                                                            .map(
-                                                                    pattern ->
-                                                                            new Path(
-                                                                                    method.name(),
-                                                                                    pattern));
-                                                }
-                                                return List.<Path>of().stream();
-                                            });
-                        })
+                .flatMap(entry -> {
+                    RequestMappingInfo mappingInfo = entry.getKey();
+                    return mappingInfo.getMethodsCondition().getMethods().stream()
+                            .filter(method -> method != RequestMethod.OPTIONS && method != RequestMethod.HEAD)
+                            .flatMap(method -> {
+                                PathPatternsRequestCondition pathPatterns = mappingInfo.getPathPatternsCondition();
+                                if (pathPatterns != null && pathPatterns.getPatterns() != null) {
+                                    return pathPatterns.getPatterns().stream()
+                                            .map(pattern -> new Path(method.name(), pattern.getPatternString()));
+                                }
+                                PatternsRequestCondition patterns = mappingInfo.getPatternsCondition();
+                                if (patterns != null && patterns.getPatterns() != null) {
+                                    return patterns.getPatterns().stream()
+                                            .map(pattern -> new Path(method.name(), pattern));
+                                }
+                                return List.<Path>of().stream();
+                            });
+                })
                 .collect(Collectors.toList());
     }
 

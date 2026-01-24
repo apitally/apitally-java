@@ -12,8 +12,7 @@ public class StartupData extends BaseDto {
     private final Map<String, String> versions;
     private final String client;
 
-    public StartupData(
-            UUID instanceUuid, List<Path> paths, Map<String, String> versions, String client) {
+    public StartupData(UUID instanceUuid, List<Path> paths, Map<String, String> versions, String client) {
         this.instanceUuid = instanceUuid;
         this.messageUuid = UUID.randomUUID();
         this.paths = paths;

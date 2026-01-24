@@ -56,9 +56,7 @@ public class ConsumerRegistry {
             }
 
             if (hasChanges) {
-                consumers.put(
-                        consumer.getIdentifier(),
-                        new Consumer(consumer.getIdentifier(), newName, newGroup));
+                consumers.put(consumer.getIdentifier(), new Consumer(consumer.getIdentifier(), newName, newGroup));
                 updated.add(consumer.getIdentifier());
             }
         }

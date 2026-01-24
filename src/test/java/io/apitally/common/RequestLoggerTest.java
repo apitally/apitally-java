@@ -46,55 +46,29 @@ public class RequestLoggerTest {
 
     @Test
     void testEndToEnd() {
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("User-Agent", "Test"),
-                };
-        Header[] responseHeaders =
-                new Header[] {
-                    new Header("Content-Type", "application/json"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        "tester",
-                        "GET",
-                        "/items",
-                        "http://test/items",
-                        requestHeaders,
-                        0L,
-                        new byte[0]);
-        Response response =
-                new Response(200, 0.123, responseHeaders, 13L, "{\"items\": []}".getBytes());
+        Header[] requestHeaders = new Header[] {
+            new Header("User-Agent", "Test"),
+        };
+        Header[] responseHeaders = new Header[] {
+            new Header("Content-Type", "application/json"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                "tester",
+                "GET",
+                "/items",
+                "http://test/items",
+                requestHeaders,
+                0L,
+                new byte[0]);
+        Response response = new Response(200, 0.123, responseHeaders, 13L, "{\"items\": []}".getBytes());
         Exception exception = new Exception("test");
         List<LogRecord> logs = new ArrayList<>();
-        logs.add(
-                new LogRecord(
-                        System.currentTimeMillis() / 1000.0,
-                        "test.Logger",
-                        "INFO",
-                        "Test log message"));
+        logs.add(new LogRecord(System.currentTimeMillis() / 1000.0, "test.Logger", "INFO", "Test log message"));
         List<SpanData> spans = new ArrayList<>();
-        spans.add(
-                new SpanData(
-                        "a1b2c3d4e5f6a7b8",
-                        null,
-                        "root",
-                        "INTERNAL",
-                        1000000L,
-                        2000000L,
-                        null,
-                        null));
-        spans.add(
-                new SpanData(
-                        "b2c3d4e5f6a7b8c9",
-                        "a1b2c3d4e5f6a7b8",
-                        "child",
-                        "INTERNAL",
-                        1100000L,
-                        1900000L,
-                        "OK",
-                        null));
+        spans.add(new SpanData("a1b2c3d4e5f6a7b8", null, "root", "INTERNAL", 1000000L, 2000000L, null, null));
+        spans.add(new SpanData(
+                "b2c3d4e5f6a7b8c9", "a1b2c3d4e5f6a7b8", "child", "INTERNAL", 1100000L, 1900000L, "OK", null));
         String traceId = "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6";
         requestLogger.logRequest(request, response, exception, logs, spans, traceId);
 
@@ -110,8 +84,8 @@ public class RequestLoggerTest {
         assertEquals(0.123, jsonNode.get("response").get("responseTime").asDouble(), 0.001);
         assertEquals(
                 "{\"items\":[]}",
-                new String(
-                        Base64.getDecoder().decode(jsonNode.get("response").get("body").asText())));
+                new String(Base64.getDecoder()
+                        .decode(jsonNode.get("response").get("body").asText())));
 
         JsonNode requestHeadersNode = jsonNode.get("request").get("headers");
         assertTrue(requestHeadersNode.isArray());
@@ -138,7 +112,8 @@ public class RequestLoggerTest {
         assertEquals("INFO", logsNode.get(0).get("level").asText());
         assertEquals("Test log message", logsNode.get(0).get("message").asText());
 
-        assertEquals("a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6", jsonNode.get("trace_id").asText());
+        assertEquals(
+                "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6", jsonNode.get("trace_id").asText());
         JsonNode spansNode = jsonNode.get("spans");
         assertTrue(spansNode.isArray());
         assertEquals(2, spansNode.size());
@@ -162,26 +137,22 @@ public class RequestLoggerTest {
         requestLoggingConfig.setResponseBodyIncluded(false);
         requestLogger = new RequestLogger(requestLoggingConfig);
 
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("Content-Type", "application/json"),
-                };
-        Header[] responseHeaders =
-                new Header[] {
-                    new Header("Content-Type", "application/json"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        "tester",
-                        "POST",
-                        "/items",
-                        "http://test/items?token=my-secret-token",
-                        requestHeaders,
-                        16L,
-                        "{\"key\": \"value\"}".getBytes());
-        Response response =
-                new Response(200, 0.123, responseHeaders, 16L, "{\"key\": \"value\"}".getBytes());
+        Header[] requestHeaders = new Header[] {
+            new Header("Content-Type", "application/json"),
+        };
+        Header[] responseHeaders = new Header[] {
+            new Header("Content-Type", "application/json"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                "tester",
+                "POST",
+                "/items",
+                "http://test/items?token=my-secret-token",
+                requestHeaders,
+                16L,
+                "{\"key\": \"value\"}".getBytes());
+        Response response = new Response(200, 0.123, responseHeaders, 16L, "{\"key\": \"value\"}".getBytes());
 
         requestLogger.logRequest(request, response, null, null, null, null);
 
@@ -197,28 +168,24 @@ public class RequestLoggerTest {
     @Test
     void testExcludeBasedOnCallback() {
         requestLoggingConfig.setEnabled(true);
-        requestLoggingConfig.setCallbacks(
-                new RequestLoggingCallbacks() {
-                    @Override
-                    public boolean shouldExclude(Request request, Response response) {
-                        return request.getConsumer() != null
-                                && request.getConsumer().contains("tester");
-                    }
-                });
+        requestLoggingConfig.setCallbacks(new RequestLoggingCallbacks() {
+            @Override
+            public boolean shouldExclude(Request request, Response response) {
+                return request.getConsumer() != null && request.getConsumer().contains("tester");
+            }
+        });
         requestLogger = new RequestLogger(requestLoggingConfig);
 
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        "tester",
-                        "GET",
-                        "/items",
-                        "http://test/items",
-                        new Header[0],
-                        0L,
-                        new byte[0]);
-        Response response =
-                new Response(200, 0.123, new Header[0], 13L, "{\"items\": []}".getBytes());
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                "tester",
+                "GET",
+                "/items",
+                "http://test/items",
+                new Header[0],
+                0L,
+                new byte[0]);
+        Response response = new Response(200, 0.123, new Header[0], 13L, "{\"items\": []}".getBytes());
 
         requestLogger.logRequest(request, response, null, null, null, null);
 
@@ -228,18 +195,16 @@ public class RequestLoggerTest {
 
     @Test
     void testExcludeBasedOnPath() {
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "GET",
-                        "/healthz",
-                        "http://test/healthz",
-                        new Header[0],
-                        0L,
-                        new byte[0]);
-        Response response =
-                new Response(200, 0.123, new Header[0], 17L, "{\"healthy\": true}".getBytes());
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                null,
+                "GET",
+                "/healthz",
+                "http://test/healthz",
+                new Header[0],
+                0L,
+                new byte[0]);
+        Response response = new Response(200, 0.123, new Header[0], 17L, "{\"healthy\": true}".getBytes());
 
         requestLogger.logRequest(request, response, null, null, null, null);
 
@@ -249,20 +214,11 @@ public class RequestLoggerTest {
 
     @Test
     void testExcludeBasedOnUserAgent() {
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("User-Agent", "ELB-HealthChecker/2.0"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "GET",
-                        "/",
-                        "http://test/",
-                        requestHeaders,
-                        0L,
-                        new byte[0]);
+        Header[] requestHeaders = new Header[] {
+            new Header("User-Agent", "ELB-HealthChecker/2.0"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0, null, "GET", "/", "http://test/", requestHeaders, 0L, new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
         requestLogger.logRequest(request, response, null, null, null, null);
@@ -278,22 +234,20 @@ public class RequestLoggerTest {
         requestLoggingConfig.setHeaderMaskPatterns(List.of("(?i)test"));
         requestLogger = new RequestLogger(requestLoggingConfig);
 
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("Accept", "text/plain"),
-                    new Header("Authorization", "Bearer 123456"),
-                    new Header("X-Test", "123456"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "GET",
-                        "/test",
-                        "http://localhost:8000/test?foo=bar",
-                        requestHeaders,
-                        0L,
-                        new byte[0]);
+        Header[] requestHeaders = new Header[] {
+            new Header("Accept", "text/plain"),
+            new Header("Authorization", "Bearer 123456"),
+            new Header("X-Test", "123456"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                null,
+                "GET",
+                "/test",
+                "http://localhost:8000/test?foo=bar",
+                requestHeaders,
+                0L,
+                new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
         requestLogger.logRequest(request, response, null, null, null, null);
@@ -320,16 +274,15 @@ public class RequestLoggerTest {
         requestLoggingConfig.setQueryParamMaskPatterns(List.of("(?i)test"));
         requestLogger = new RequestLogger(requestLoggingConfig);
 
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "GET",
-                        "/test",
-                        "http://localhost/test?secret=123456&test=123456&other=abcdef",
-                        new Header[0],
-                        0L,
-                        new byte[0]);
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                null,
+                "GET",
+                "/test",
+                "http://localhost/test?secret=123456&test=123456&other=abcdef",
+                new Header[0],
+                0L,
+                new byte[0]);
         Response response = new Response(200, 0, new Header[0], 0L, new byte[0]);
 
         requestLogger.logRequest(request, response, null, null, null, null);
@@ -347,60 +300,50 @@ public class RequestLoggerTest {
         requestLoggingConfig.setEnabled(true);
         requestLoggingConfig.setRequestBodyIncluded(true);
         requestLoggingConfig.setResponseBodyIncluded(true);
-        requestLoggingConfig.setCallbacks(
-                new RequestLoggingCallbacks() {
-                    @Override
-                    public byte[] maskRequestBody(Request request) {
-                        if ("/test".equals(request.getPath())) {
-                            return null;
-                        }
-                        return request.getBody();
-                    }
+        requestLoggingConfig.setCallbacks(new RequestLoggingCallbacks() {
+            @Override
+            public byte[] maskRequestBody(Request request) {
+                if ("/test".equals(request.getPath())) {
+                    return null;
+                }
+                return request.getBody();
+            }
 
-                    @Override
-                    public byte[] maskResponseBody(Request request, Response response) {
-                        if ("/test".equals(request.getPath())) {
-                            return null;
-                        }
-                        return response.getBody();
-                    }
-                });
+            @Override
+            public byte[] maskResponseBody(Request request, Response response) {
+                if ("/test".equals(request.getPath())) {
+                    return null;
+                }
+                return response.getBody();
+            }
+        });
         requestLogger = new RequestLogger(requestLoggingConfig);
 
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("Content-Type", "application/json"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "GET",
-                        "/test",
-                        "http://test/test",
-                        requestHeaders,
-                        4L,
-                        "test".getBytes());
-        Response response =
-                new Response(
-                        200,
-                        0,
-                        new Header[] {new Header("Content-Type", "application/json")},
-                        4L,
-                        "test".getBytes());
+        Header[] requestHeaders = new Header[] {
+            new Header("Content-Type", "application/json"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                null,
+                "GET",
+                "/test",
+                "http://test/test",
+                requestHeaders,
+                4L,
+                "test".getBytes());
+        Response response = new Response(
+                200, 0, new Header[] {new Header("Content-Type", "application/json")}, 4L, "test".getBytes());
 
         requestLogger.logRequest(request, response, null, null, null, null);
 
         JsonNode[] items = getLoggedItems(requestLogger);
         assertEquals(1, items.length);
-        String requestBody =
-                new String(
-                        Base64.getDecoder().decode(items[0].get("request").get("body").asText()));
+        String requestBody = new String(
+                Base64.getDecoder().decode(items[0].get("request").get("body").asText()));
         assertEquals("<masked>", requestBody);
 
-        String responseBody =
-                new String(
-                        Base64.getDecoder().decode(items[0].get("response").get("body").asText()));
+        String responseBody = new String(
+                Base64.getDecoder().decode(items[0].get("response").get("body").asText()));
         assertEquals("<masked>", responseBody);
     }
 
@@ -417,27 +360,24 @@ public class RequestLoggerTest {
         String responseBodyJson =
                 "{\"status\":\"success\",\"secret\":\"response_secret\",\"data\":{\"pwd\":\"response_pwd\"}}";
 
-        Header[] requestHeaders =
-                new Header[] {
-                    new Header("Content-Type", "application/json"),
-                };
-        Request request =
-                new Request(
-                        System.currentTimeMillis() / 1000.0,
-                        null,
-                        "POST",
-                        "/test",
-                        "http://localhost:8000/test?foo=bar",
-                        requestHeaders,
-                        (long) requestBodyJson.getBytes().length,
-                        requestBodyJson.getBytes());
-        Response response =
-                new Response(
-                        200,
-                        0.1,
-                        new Header[] {new Header("Content-Type", "application/json")},
-                        (long) responseBodyJson.getBytes().length,
-                        responseBodyJson.getBytes());
+        Header[] requestHeaders = new Header[] {
+            new Header("Content-Type", "application/json"),
+        };
+        Request request = new Request(
+                System.currentTimeMillis() / 1000.0,
+                null,
+                "POST",
+                "/test",
+                "http://localhost:8000/test?foo=bar",
+                requestHeaders,
+                (long) requestBodyJson.getBytes().length,
+                requestBodyJson.getBytes());
+        Response response = new Response(
+                200,
+                0.1,
+                new Header[] {new Header("Content-Type", "application/json")},
+                (long) responseBodyJson.getBytes().length,
+                responseBodyJson.getBytes());
 
         requestLogger.logRequest(request, response, null, null, null, null);
 

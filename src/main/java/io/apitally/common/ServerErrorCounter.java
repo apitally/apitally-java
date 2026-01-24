@@ -20,14 +20,13 @@ public class ServerErrorCounter {
     }
 
     public void addServerError(String consumer, String method, String path, Exception exception) {
-        ServerError error =
-                new ServerError(
-                        consumer,
-                        method,
-                        path,
-                        exception.getClass().getSimpleName(),
-                        exception.getMessage(),
-                        exception.getStackTrace());
+        ServerError error = new ServerError(
+                consumer,
+                method,
+                path,
+                exception.getClass().getSimpleName(),
+                exception.getMessage(),
+                exception.getStackTrace());
         String key = getKey(error);
         errorDetails.putIfAbsent(key, error);
         errorCounts.merge(key, 1, Integer::sum);
@@ -35,36 +34,33 @@ public class ServerErrorCounter {
 
     public List<ServerErrors> getAndResetServerErrors() {
         List<ServerErrors> data = new ArrayList<>();
-        errorCounts.forEach(
-                (key, count) -> {
-                    ServerError error = errorDetails.get(key);
-                    if (error != null) {
-                        data.add(
-                                new ServerErrors(
-                                        error.getConsumer(),
-                                        error.getMethod(),
-                                        error.getPath(),
-                                        error.getType(),
-                                        error.getMessage(),
-                                        error.getStackTrace(),
-                                        count));
-                    }
-                });
+        errorCounts.forEach((key, count) -> {
+            ServerError error = errorDetails.get(key);
+            if (error != null) {
+                data.add(new ServerErrors(
+                        error.getConsumer(),
+                        error.getMethod(),
+                        error.getPath(),
+                        error.getType(),
+                        error.getMessage(),
+                        error.getStackTrace(),
+                        count));
+            }
+        });
         errorCounts.clear();
         errorDetails.clear();
         return data;
     }
 
     private String getKey(ServerError error) {
-        String hashInput =
-                String.join(
-                        "|",
-                        error.getConsumer() != null ? error.getConsumer() : "",
-                        error.getMethod(),
-                        error.getPath(),
-                        error.getType(),
-                        error.getMessage(),
-                        error.getStackTraceString());
+        String hashInput = String.join(
+                "|",
+                error.getConsumer() != null ? error.getConsumer() : "",
+                error.getMethod(),
+                error.getPath(),
+                error.getType(),
+                error.getMessage(),
+                error.getStackTraceString());
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] digest = md.digest(hashInput.getBytes());

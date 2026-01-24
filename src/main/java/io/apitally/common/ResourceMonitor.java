@@ -21,8 +21,7 @@ public class ResourceMonitor {
                 return null;
             }
 
-            double cpuPercent =
-                    100.0 * currentProcess.getProcessCpuLoadBetweenTicks(previousSnapshot);
+            double cpuPercent = 100.0 * currentProcess.getProcessCpuLoadBetweenTicks(previousSnapshot);
             long memoryRss = currentProcess.getResidentSetSize();
             previousSnapshot = currentProcess;
 

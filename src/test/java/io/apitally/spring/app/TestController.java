@@ -35,8 +35,7 @@ public class TestController {
 
     @GetMapping("/items")
     public List<TestItem> getItems(
-            HttpServletRequest request,
-            @RequestParam(required = false) @Size(min = 2, max = 10) String name) {
+            HttpServletRequest request, @RequestParam(required = false) @Size(min = 2, max = 10) String name) {
         logger.info("Getting items with filter: {}", name != null ? name : "none");
 
         ApitallyConsumer consumer = new ApitallyConsumer("tester", "Tester", "Test Group");
@@ -66,8 +65,7 @@ public class TestController {
 
     @PutMapping("/items/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updateItem(
-            @Valid @RequestBody TestItem newItem, @PathVariable @Min(1) Integer id) {}
+    public void updateItem(@Valid @RequestBody TestItem newItem, @PathVariable @Min(1) Integer id) {}
 
     @DeleteMapping(value = "/items/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -80,10 +78,8 @@ public class TestController {
 
     @ExceptionHandler({ConstraintViolationException.class})
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    private ResponseEntity<Object> handleConstraintViolationException(
-            ConstraintViolationException e) {
-        return ResponseEntity.of(
-                        ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()))
+    private ResponseEntity<Object> handleConstraintViolationException(ConstraintViolationException e) {
+        return ResponseEntity.of(ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, e.getMessage()))
                 .build();
     }
 }

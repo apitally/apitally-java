@@ -6,13 +6,7 @@ public class ValidationErrors extends ValidationError {
     private final int errorCount;
 
     public ValidationErrors(
-            String consumer,
-            String method,
-            String path,
-            String loc,
-            String msg,
-            String type,
-            int errorCount) {
+            String consumer, String method, String path, String loc, String msg, String type, int errorCount) {
         super(consumer, method, path, loc, msg, type);
         this.errorCount = errorCount;
     }

@@ -23,8 +23,7 @@ public class SpanCollector implements SpanProcessor {
     private final boolean enabled;
     private volatile Tracer tracer;
     private final Map<String, Set<String>> includedSpanIds = new ConcurrentHashMap<>();
-    private final Map<String, ConcurrentLinkedQueue<SpanData>> collectedSpans =
-            new ConcurrentHashMap<>();
+    private final Map<String, ConcurrentLinkedQueue<SpanData>> collectedSpans = new ConcurrentHashMap<>();
 
     public SpanCollector(boolean enabled) {
         this.enabled = enabled;
@@ -121,10 +120,9 @@ public class SpanCollector implements SpanProcessor {
         SpanContext parentSpanContext = spanData.getParentSpanContext();
 
         String parentSpanId = parentSpanContext.isValid() ? parentSpanContext.getSpanId() : null;
-        String status =
-                spanData.getStatus().getStatusCode() != StatusCode.UNSET
-                        ? spanData.getStatus().getStatusCode().name()
-                        : null;
+        String status = spanData.getStatus().getStatusCode() != StatusCode.UNSET
+                ? spanData.getStatus().getStatusCode().name()
+                : null;
 
         Map<String, Object> attributes = null;
         if (!spanData.getAttributes().isEmpty()) {

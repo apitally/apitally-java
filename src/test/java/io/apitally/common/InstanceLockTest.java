@@ -32,14 +32,12 @@ class InstanceLockTest {
     void tearDown() throws IOException {
         if (tempDir != null && Files.exists(tempDir)) {
             try (var paths = Files.walk(tempDir)) {
-                paths.sorted(Comparator.reverseOrder())
-                        .forEach(
-                                path -> {
-                                    try {
-                                        Files.deleteIfExists(path);
-                                    } catch (IOException ignored) {
-                                    }
-                                });
+                paths.sorted(Comparator.reverseOrder()).forEach(path -> {
+                    try {
+                        Files.deleteIfExists(path);
+                    } catch (IOException ignored) {
+                    }
+                });
             }
         }
     }
