@@ -1,6 +1,6 @@
 package io.apitally.spring;
 
-import io.apitally.common.ApitallyAppender;
+import io.apitally.common.LogAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.dto.Path;
 import java.util.List;
@@ -31,7 +31,7 @@ public class ApitallyAutoConfiguration {
 
         if (properties.getRequestLogging().isEnabled()
                 && properties.getRequestLogging().isLogCaptureEnabled()) {
-            ApitallyAppender.register();
+            LogAppender.register();
         }
         if (properties.getRequestLogging().isEnabled()
                 && properties.getRequestLogging().isTracingEnabled()) {

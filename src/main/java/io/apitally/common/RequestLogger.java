@@ -185,8 +185,9 @@ public class RequestLogger {
                 logs = null;
             }
 
-            if (!config.isTracingEnabled() && spans != null) {
+            if (!config.isTracingEnabled()) {
                 spans = null;
+                traceId = null;
             }
 
             RequestLogItem item =

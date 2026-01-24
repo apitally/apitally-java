@@ -31,7 +31,7 @@ class SpanCollectorTest {
     @AfterEach
     void tearDown() {
         if (collector != null) {
-            collector.reset();
+            collector.resetForTest();
         }
         ApitallySpanCollector.getInstance().setDelegate(null);
         GlobalOpenTelemetry.resetForTest();
@@ -80,20 +80,20 @@ class SpanCollectorTest {
         Span child2 = tracer.spanBuilder("child2").startSpan();
         child2.end();
 
-        handle.setName("GET /users");
+        handle.setName("TestController.getTest");
 
         List<SpanData> spans = handle.end();
         assertNotNull(spans);
         assertEquals(3, spans.size());
 
         Set<String> spanNames = spans.stream().map(SpanData::getName).collect(Collectors.toSet());
-        assertTrue(spanNames.contains("GET /users"));
+        assertTrue(spanNames.contains("TestController.getTest"));
         assertTrue(spanNames.contains("child1"));
         assertTrue(spanNames.contains("child2"));
 
         SpanData rootSpan =
                 spans.stream()
-                        .filter(s -> s.getName().equals("GET /users"))
+                        .filter(s -> s.getName().equals("TestController.getTest"))
                         .findFirst()
                         .orElse(null);
         assertNotNull(rootSpan);
@@ -113,12 +113,12 @@ class SpanCollectorTest {
         collector.startCollection().end();
 
         Tracer tracer = GlobalOpenTelemetry.getTracer("test");
-        Span outsideSpan = tracer.spanBuilder("outside_span").startSpan();
+        Span outsideSpan = tracer.spanBuilder("outsideSpan").startSpan();
         outsideSpan.end();
 
         SpanCollector.SpanHandle handle = collector.startCollection();
 
-        Span insideSpan = tracer.spanBuilder("inside_span").startSpan();
+        Span insideSpan = tracer.spanBuilder("insideSpan").startSpan();
         insideSpan.end();
 
         List<SpanData> spans = handle.end();
@@ -126,8 +126,8 @@ class SpanCollectorTest {
 
         Set<String> spanNames = spans.stream().map(SpanData::getName).collect(Collectors.toSet());
         assertTrue(spanNames.contains("root"));
-        assertTrue(spanNames.contains("inside_span"));
-        assertFalse(spanNames.contains("outside_span"));
+        assertTrue(spanNames.contains("insideSpan"));
+        assertFalse(spanNames.contains("outsideSpan"));
     }
 
     @Test
@@ -137,7 +137,7 @@ class SpanCollectorTest {
         SpanCollector.SpanHandle handle = collector.startCollection();
         Tracer tracer = GlobalOpenTelemetry.getTracer("test");
 
-        Span span = tracer.spanBuilder("test_span").startSpan();
+        Span span = tracer.spanBuilder("testSpan").startSpan();
         span.setAttribute("http.method", "GET");
         span.setAttribute("http.status_code", 200);
         span.end();
@@ -147,7 +147,7 @@ class SpanCollectorTest {
 
         SpanData testSpan =
                 spans.stream()
-                        .filter(s -> s.getName().equals("test_span"))
+                        .filter(s -> s.getName().equals("testSpan"))
                         .findFirst()
                         .orElse(null);
         assertNotNull(testSpan);

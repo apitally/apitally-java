@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apitally.common.ApitallyAppender;
+import io.apitally.common.LogAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.TempGzipFile;
@@ -51,7 +51,7 @@ class ApitallyFilterTest {
     static class TestConfig {
         @Bean
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
-            ApitallyAppender.register();
+            LogAppender.register();
             return new ApitallyClient(
                     properties.getClientId(), properties.getEnv(), properties.getRequestLogging());
         }

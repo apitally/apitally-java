@@ -15,15 +15,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.LoggerFactory;
 
-public class ApitallyAppenderTest {
+public class LogAppenderTest {
 
-    private ApitallyAppender appender;
+    private LogAppender appender;
     private LoggerContext loggerContext;
 
     @BeforeEach
     void setUp() {
         loggerContext = (LoggerContext) LoggerFactory.getILoggerFactory();
-        appender = new ApitallyAppender();
+        appender = new LogAppender();
         appender.setContext(loggerContext);
         appender.setName("TestApitallyAppender");
         appender.start();
@@ -31,15 +31,15 @@ public class ApitallyAppenderTest {
 
     @AfterEach
     void tearDown() {
-        ApitallyAppender.endCapture();
+        LogAppender.endCapture();
         appender.stop();
     }
 
     @Test
     void testStartCaptureAndEndCapture() {
-        ApitallyAppender.startCapture();
+        LogAppender.startCapture();
         appender.doAppend(createLoggingEvent("Test message"));
-        List<LogRecord> logs = ApitallyAppender.endCapture();
+        List<LogRecord> logs = LogAppender.endCapture();
 
         assertNotNull(logs);
         assertEquals(1, logs.size());
@@ -51,18 +51,18 @@ public class ApitallyAppenderTest {
     @Test
     void testNoCaptureWhenNotStarted() {
         appender.doAppend(createLoggingEvent("Test message"));
-        List<LogRecord> logs = ApitallyAppender.endCapture();
+        List<LogRecord> logs = LogAppender.endCapture();
 
         assertNull(logs);
     }
 
     @Test
     void testMaxBufferSizeLimit() {
-        ApitallyAppender.startCapture();
+        LogAppender.startCapture();
         for (int i = 0; i < 1100; i++) {
             appender.doAppend(createLoggingEvent("Message " + i));
         }
-        List<LogRecord> logs = ApitallyAppender.endCapture();
+        List<LogRecord> logs = LogAppender.endCapture();
 
         assertNotNull(logs);
         assertEquals(1000, logs.size());
@@ -70,9 +70,9 @@ public class ApitallyAppenderTest {
 
     @Test
     void testMessageTruncation() {
-        ApitallyAppender.startCapture();
+        LogAppender.startCapture();
         appender.doAppend(createLoggingEvent("A".repeat(3000)));
-        List<LogRecord> logs = ApitallyAppender.endCapture();
+        List<LogRecord> logs = LogAppender.endCapture();
 
         assertNotNull(logs);
         assertEquals(1, logs.size());

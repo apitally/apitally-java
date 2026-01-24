@@ -55,6 +55,7 @@ public class SpanCollector implements SpanProcessor {
         if (traceId == null) {
             return null;
         }
+
         includedSpanIds.remove(traceId);
         ConcurrentLinkedQueue<SpanData> spans = collectedSpans.remove(traceId);
         return spans != null ? new ArrayList<>(spans) : null;
@@ -180,8 +181,7 @@ public class SpanCollector implements SpanProcessor {
         }
     }
 
-    // For testing only
-    void reset() {
+    void resetForTest() {
         this.tracer = null;
         this.includedSpanIds.clear();
         this.collectedSpans.clear();

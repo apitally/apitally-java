@@ -1,6 +1,6 @@
 package io.apitally.spring;
 
-import io.apitally.common.ApitallyAppender;
+import io.apitally.common.LogAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
 import io.apitally.common.RequestLogger;
@@ -29,6 +29,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
@@ -83,7 +84,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
         final long startTime = System.currentTimeMillis();
 
         if (shouldCaptureLogs) {
-            ApitallyAppender.startCapture();
+            LogAppender.startCapture();
         }
 
         final SpanCollector.SpanHandle spanHandle =
@@ -108,8 +109,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 List<SpanData> spans = null;
                 String traceId = null;
                 if (spanHandle != null) {
-                    if (path != null) {
-                        spanHandle.setName(request.getMethod() + " " + path);
+                    Object handler =
+                            request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+                    if (handler instanceof HandlerMethod handlerMethod) {
+                        String controllerName = handlerMethod.getBeanType().getSimpleName();
+                        String methodName = handlerMethod.getMethod().getName();
+                        spanHandle.setName(controllerName + "." + methodName);
                     }
                     spans = spanHandle.end();
                     traceId = spanHandle.getTraceId();
@@ -117,7 +122,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
                 // End log capture and get logs
                 final List<LogRecord> capturedLogs =
-                        shouldCaptureLogs ? ApitallyAppender.endCapture() : null;
+                        shouldCaptureLogs ? LogAppender.endCapture() : null;
 
                 // Get request and response body
                 final byte[] requestBody =
