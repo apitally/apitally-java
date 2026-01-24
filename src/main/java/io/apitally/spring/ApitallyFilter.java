@@ -59,16 +59,12 @@ public class ApitallyFilter extends OncePerRequestFilter {
         final boolean requestLoggingEnabled = requestLoggingConfig.isEnabled();
 
         String requestContentType = request.getContentType();
-        final boolean shouldCacheRequest =
-                requestLoggingEnabled
-                        && requestLoggingConfig.isRequestBodyIncluded()
-                        && requestContentType != null
-                        && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
-                                .anyMatch(
-                                        allowedContentType ->
-                                                requestContentType.startsWith(allowedContentType));
-        final boolean shouldCacheResponse =
-                requestLoggingEnabled && requestLoggingConfig.isResponseBodyIncluded();
+        final boolean shouldCacheRequest = requestLoggingEnabled
+                && requestLoggingConfig.isRequestBodyIncluded()
+                && requestContentType != null
+                && RequestLogger.ALLOWED_CONTENT_TYPES.stream()
+                        .anyMatch(allowedContentType -> requestContentType.startsWith(allowedContentType));
+        final boolean shouldCacheResponse = requestLoggingEnabled && requestLoggingConfig.isResponseBodyIncluded();
         ContentCachingRequestWrapper cachingRequest =
                 shouldCacheRequest ? new ContentCachingRequestWrapper(request) : null;
         ContentCachingResponseWrapper cachingResponse =
@@ -76,10 +72,8 @@ public class ApitallyFilter extends OncePerRequestFilter {
         CountingResponseWrapper countingResponse =
                 cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
-        final boolean shouldCaptureLogs =
-                requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
-        final boolean shouldCaptureSpans =
-                requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
+        final boolean shouldCaptureLogs = requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
+        final boolean shouldCaptureSpans = requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
@@ -88,8 +82,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
             LogAppender.startCapture();
         }
 
-        final SpanCollector.SpanHandle spanHandle =
-                shouldCaptureSpans ? client.spanCollector.startCollection() : null;
+        final SpanCollector.SpanHandle spanHandle = shouldCaptureSpans ? client.spanCollector.startCollection() : null;
 
         try {
             filterChain.doFilter(
@@ -101,17 +94,13 @@ public class ApitallyFilter extends OncePerRequestFilter {
         } finally {
             try {
                 final long responseTimeInMillis = System.currentTimeMillis() - startTime;
-                final String path =
-                        (String)
-                                request.getAttribute(
-                                        HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+                final String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
 
                 // End span collection and get spans
                 List<SpanData> spans = null;
                 String traceId = null;
                 if (spanHandle != null) {
-                    Object handler =
-                            request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
+                    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
                     if (handler instanceof HandlerMethod handlerMethod) {
                         String controllerName = handlerMethod.getBeanType().getSimpleName();
                         String methodName = handlerMethod.getMethod().getName();
@@ -122,52 +111,39 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 }
 
                 // End log capture and get logs
-                final List<LogRecord> capturedLogs =
-                        shouldCaptureLogs ? LogAppender.endCapture() : null;
+                final List<LogRecord> capturedLogs = shouldCaptureLogs ? LogAppender.endCapture() : null;
 
                 // Get request and response body
                 final byte[] requestBody =
-                        cachingRequest != null
-                                ? cachingRequest.getContentAsByteArray()
-                                : new byte[0];
+                        cachingRequest != null ? cachingRequest.getContentAsByteArray() : new byte[0];
                 final byte[] responseBody =
-                        cachingResponse != null
-                                ? cachingResponse.getContentAsByteArray()
-                                : new byte[0];
+                        cachingResponse != null ? cachingResponse.getContentAsByteArray() : new byte[0];
                 if (cachingResponse != null) {
                     cachingResponse.copyBodyToResponse();
                 }
 
                 // Register consumer and get consumer identifier
-                final Consumer consumer =
-                        ConsumerRegistry.consumerFromObject(
-                                request.getAttribute("apitallyConsumer"));
+                final Consumer consumer = ConsumerRegistry.consumerFromObject(request.getAttribute("apitallyConsumer"));
                 client.consumerRegistry.addOrUpdateConsumer(consumer);
                 final String consumerIdentifier = consumer != null ? consumer.getIdentifier() : "";
 
                 // Get captured exception
                 Object capturedException = request.getAttribute("apitallyCapturedException");
-                if (exception == null
-                        && capturedException != null
-                        && capturedException instanceof Exception) {
+                if (exception == null && capturedException != null && capturedException instanceof Exception) {
                     exception = (Exception) capturedException;
                 }
 
                 // Add request to counter
                 final long requestContentLength = request.getContentLengthLong();
-                final long requestSize =
-                        requestContentLength >= 0
-                                ? requestContentLength
-                                : cachingRequest != null ? requestBody.length : -1;
+                final long requestSize = requestContentLength >= 0
+                        ? requestContentLength
+                        : cachingRequest != null ? requestBody.length : -1;
                 final long responseContentLength = getResponseContentLength(response);
-                final long responseSize =
-                        responseContentLength >= 0
-                                ? responseContentLength
-                                : cachingResponse != null
-                                        ? responseBody.length
-                                        : countingResponse != null
-                                                ? countingResponse.getByteCount()
-                                                : -1;
+                final long responseSize = responseContentLength >= 0
+                        ? responseContentLength
+                        : cachingResponse != null
+                                ? responseBody.length
+                                : countingResponse != null ? countingResponse.getByteCount() : -1;
                 client.requestCounter.addRequest(
                         consumerIdentifier,
                         request.getMethod(),
@@ -179,21 +155,13 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
                 // Log request
                 if (client.requestLogger.isEnabled()) {
-                    final Header[] requestHeaders =
-                            Collections.list(request.getHeaderNames()).stream()
-                                    .flatMap(
-                                            name ->
-                                                    Collections.list(request.getHeaders(name))
-                                                            .stream()
-                                                            .map(value -> new Header(name, value)))
-                                    .toArray(Header[]::new);
-                    final Header[] responseHeaders =
-                            response.getHeaderNames().stream()
-                                    .flatMap(
-                                            name ->
-                                                    response.getHeaders(name).stream()
-                                                            .map(value -> new Header(name, value)))
-                                    .toArray(Header[]::new);
+                    final Header[] requestHeaders = Collections.list(request.getHeaderNames()).stream()
+                            .flatMap(name -> Collections.list(request.getHeaders(name)).stream()
+                                    .map(value -> new Header(name, value)))
+                            .toArray(Header[]::new);
+                    final Header[] responseHeaders = response.getHeaderNames().stream()
+                            .flatMap(name -> response.getHeaders(name).stream().map(value -> new Header(name, value)))
+                            .toArray(Header[]::new);
 
                     client.requestLogger.logRequest(
                             new Request(
@@ -248,8 +216,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
 
                 // Add server error to counter
                 if (response.getStatus() == 500 && exception != null) {
-                    client.serverErrorCounter.addServerError(
-                            consumerIdentifier, request.getMethod(), path, exception);
+                    client.serverErrorCounter.addServerError(consumerIdentifier, request.getMethod(), path, exception);
                 }
             } catch (Exception e) {
                 logger.error("Error in Apitally filter", e);

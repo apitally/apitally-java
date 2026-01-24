@@ -75,8 +75,7 @@ public class TempGzipFile implements AutoCloseable {
     public List<String> readDecompressedLines() throws IOException {
         try (InputStream inputStream = getInputStream();
                 GZIPInputStream gzipInputStream = new GZIPInputStream(inputStream);
-                BufferedReader reader =
-                        new BufferedReader(new InputStreamReader(gzipInputStream))) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(gzipInputStream))) {
             return reader.lines().collect(Collectors.toList());
         }
     }

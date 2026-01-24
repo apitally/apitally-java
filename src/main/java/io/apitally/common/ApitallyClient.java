@@ -44,18 +44,16 @@ public class ApitallyClient {
     private static final int INITIAL_PERIOD_SECONDS = 3600;
     private static final int MAX_QUEUE_TIME_SECONDS = 3600;
     private static final int REQUEST_TIMEOUT_SECONDS = 10;
-    private static final String HUB_BASE_URL =
-            Optional.ofNullable(System.getenv("APITALLY_HUB_BASE_URL"))
-                    .filter(s -> !s.trim().isEmpty())
-                    .orElse("https://hub.apitally.io");
+    private static final String HUB_BASE_URL = Optional.ofNullable(System.getenv("APITALLY_HUB_BASE_URL"))
+            .filter(s -> !s.trim().isEmpty())
+            .orElse("https://hub.apitally.io");
 
     private static final Logger logger = LoggerFactory.getLogger(ApitallyClient.class);
-    private static final RetryTemplate retryTemplate =
-            RetryTemplate.builder()
-                    .maxAttempts(3)
-                    .exponentialBackoff(Duration.ofSeconds(1), 2, Duration.ofSeconds(4), true)
-                    .retryOn(RetryableHubRequestException.class)
-                    .build();
+    private static final RetryTemplate retryTemplate = RetryTemplate.builder()
+            .maxAttempts(3)
+            .exponentialBackoff(Duration.ofSeconds(1), 2, Duration.ofSeconds(4), true)
+            .retryOn(RetryableHubRequestException.class)
+            .build();
 
     private final String clientId;
     private final String env;
@@ -87,9 +85,7 @@ public class ApitallyClient {
         this.requestCounter = new RequestCounter();
         this.requestLogger = new RequestLogger(requestLoggingConfig);
         this.spanCollector =
-                new SpanCollector(
-                        requestLoggingConfig.isEnabled()
-                                && requestLoggingConfig.isTracingEnabled());
+                new SpanCollector(requestLoggingConfig.isEnabled() && requestLoggingConfig.isTracingEnabled());
         this.validationErrorCounter = new ValidationErrorCounter();
         this.serverErrorCounter = new ServerErrorCounter();
         this.consumerRegistry = new ConsumerRegistry();
@@ -128,36 +124,32 @@ public class ApitallyClient {
         if (startupData == null) {
             return;
         }
-        HttpRequest request =
-                HttpRequest.newBuilder()
-                        .uri(getHubUrl("startup"))
-                        .header("Content-Type", "application/json")
-                        .POST(HttpRequest.BodyPublishers.ofString(startupData.toJSON()))
-                        .build();
-        sendHubRequest(request)
-                .thenAccept(
-                        status -> {
-                            if (status == HubRequestStatus.OK) {
-                                startupDataSent = true;
-                                startupData = null;
-                            } else if (status == HubRequestStatus.VALIDATION_ERROR) {
-                                startupDataSent = false;
-                                startupData = null;
-                            } else {
-                                startupDataSent = false;
-                            }
-                        });
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(getHubUrl("startup"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(startupData.toJSON()))
+                .build();
+        sendHubRequest(request).thenAccept(status -> {
+            if (status == HubRequestStatus.OK) {
+                startupDataSent = true;
+                startupData = null;
+            } else if (status == HubRequestStatus.VALIDATION_ERROR) {
+                startupDataSent = false;
+                startupData = null;
+            } else {
+                startupDataSent = false;
+            }
+        });
     }
 
     private void sendSyncData() {
-        SyncData data =
-                new SyncData(
-                        instanceLock.getInstanceUuid(),
-                        requestCounter.getAndResetRequests(),
-                        validationErrorCounter.getAndResetValidationErrors(),
-                        serverErrorCounter.getAndResetServerErrors(),
-                        consumerRegistry.getAndResetConsumers(),
-                        resourceMonitor.getCpuMemoryUsage());
+        SyncData data = new SyncData(
+                instanceLock.getInstanceUuid(),
+                requestCounter.getAndResetRequests(),
+                validationErrorCounter.getAndResetValidationErrors(),
+                serverErrorCounter.getAndResetServerErrors(),
+                consumerRegistry.getAndResetConsumers(),
+                resourceMonitor.getCpuMemoryUsage());
         syncDataQueue.offer(data);
 
         int i = 0;
@@ -170,12 +162,11 @@ public class ApitallyClient {
                             // Add random delay between retries
                             Thread.sleep(100 + random.nextInt(400));
                         }
-                        HttpRequest request =
-                                HttpRequest.newBuilder()
-                                        .uri(getHubUrl("sync"))
-                                        .header("Content-Type", "application/json")
-                                        .POST(HttpRequest.BodyPublishers.ofString(payload.toJSON()))
-                                        .build();
+                        HttpRequest request = HttpRequest.newBuilder()
+                                .uri(getHubUrl("sync"))
+                                .header("Content-Type", "application/json")
+                                .POST(HttpRequest.BodyPublishers.ofString(payload.toJSON()))
+                                .build();
                         HubRequestStatus status = sendHubRequest(request).join();
                         if (status == HubRequestStatus.RETRYABLE_ERROR) {
                             syncDataQueue.offer(payload);
@@ -204,12 +195,11 @@ public class ApitallyClient {
                 }
             }
             try (InputStream inputStream = logFile.getInputStream()) {
-                HttpRequest request =
-                        HttpRequest.newBuilder()
-                                .uri(getHubUrl("log", "uuid=" + logFile.getUuid().toString()))
-                                .header("Content-Type", "application/octet-stream")
-                                .POST(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream))
-                                .build();
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(getHubUrl("log", "uuid=" + logFile.getUuid().toString()))
+                        .header("Content-Type", "application/octet-stream")
+                        .POST(HttpRequest.BodyPublishers.ofInputStream(() -> inputStream))
+                        .build();
                 HubRequestStatus status = sendHubRequest(request).join();
                 if (status == HubRequestStatus.PAYMENT_REQUIRED) {
                     requestLogger.clear();
@@ -231,63 +221,47 @@ public class ApitallyClient {
     }
 
     public CompletableFuture<HubRequestStatus> sendHubRequest(HttpRequest request) {
-        return CompletableFuture.supplyAsync(
-                () -> {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                return retryTemplate.execute(context -> {
                     try {
-                        return retryTemplate.execute(
-                                context -> {
-                                    try {
-                                        logger.debug(
-                                                "Sending request to Apitally hub: {}",
-                                                request.uri());
-                                        HttpResponse<String> response =
-                                                httpClient.send(
-                                                        request,
-                                                        HttpResponse.BodyHandlers.ofString());
-                                        if (response.statusCode() >= 200
-                                                && response.statusCode() < 300) {
-                                            return HubRequestStatus.OK;
-                                        } else if (response.statusCode() == 402) {
-                                            return HubRequestStatus.PAYMENT_REQUIRED;
-                                        } else if (response.statusCode() == 404) {
-                                            enabled = false;
-                                            stopSync();
-                                            requestLogger.close();
-                                            logger.error(
-                                                    "Invalid Apitally client ID: {}", clientId);
-                                            return HubRequestStatus.INVALID_CLIENT_ID;
-                                        } else if (response.statusCode() == 422) {
-                                            logger.error(
-                                                    "Received validation error from Apitally hub: {}",
-                                                    response.body());
-                                            return HubRequestStatus.VALIDATION_ERROR;
-                                        } else {
-                                            throw new RetryableHubRequestException(
-                                                    "Hub request failed with status code "
-                                                            + response.statusCode());
-                                        }
-                                    } catch (Exception e) {
-                                        throw new RetryableHubRequestException(
-                                                "Hub request failed with exception: "
-                                                        + e.getMessage());
-                                    }
-                                });
+                        logger.debug("Sending request to Apitally hub: {}", request.uri());
+                        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+                        if (response.statusCode() >= 200 && response.statusCode() < 300) {
+                            return HubRequestStatus.OK;
+                        } else if (response.statusCode() == 402) {
+                            return HubRequestStatus.PAYMENT_REQUIRED;
+                        } else if (response.statusCode() == 404) {
+                            enabled = false;
+                            stopSync();
+                            requestLogger.close();
+                            logger.error("Invalid Apitally client ID: {}", clientId);
+                            return HubRequestStatus.INVALID_CLIENT_ID;
+                        } else if (response.statusCode() == 422) {
+                            logger.error("Received validation error from Apitally hub: {}", response.body());
+                            return HubRequestStatus.VALIDATION_ERROR;
+                        } else {
+                            throw new RetryableHubRequestException(
+                                    "Hub request failed with status code " + response.statusCode());
+                        }
                     } catch (Exception e) {
-                        logger.error("Error sending request to Apitally hub", e);
-                        return HubRequestStatus.RETRYABLE_ERROR;
+                        throw new RetryableHubRequestException("Hub request failed with exception: " + e.getMessage());
                     }
                 });
+            } catch (Exception e) {
+                logger.error("Error sending request to Apitally hub", e);
+                return HubRequestStatus.RETRYABLE_ERROR;
+            }
+        });
     }
 
     public void startSync() {
         if (scheduler == null) {
-            scheduler =
-                    Executors.newSingleThreadScheduledExecutor(
-                            r -> {
-                                Thread thread = new Thread(r, "apitally-sync");
-                                thread.setDaemon(true);
-                                return thread;
-                            });
+            scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread thread = new Thread(r, "apitally-sync");
+                thread.setDaemon(true);
+                return thread;
+            });
         }
 
         if (syncTask != null) {
@@ -295,20 +269,14 @@ public class ApitallyClient {
         }
 
         // Start with shorter initial sync interval
-        syncTask =
-                scheduler.scheduleAtFixedRate(
-                        this::sync, 0, INITIAL_SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
+        syncTask = scheduler.scheduleAtFixedRate(this::sync, 0, INITIAL_SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
 
         // Schedule a one-time task to switch to regular sync interval
         scheduler.schedule(
                 () -> {
                     syncTask.cancel(false);
-                    syncTask =
-                            scheduler.scheduleAtFixedRate(
-                                    this::sync,
-                                    SYNC_INTERVAL_SECONDS,
-                                    SYNC_INTERVAL_SECONDS,
-                                    TimeUnit.SECONDS);
+                    syncTask = scheduler.scheduleAtFixedRate(
+                            this::sync, SYNC_INTERVAL_SECONDS, SYNC_INTERVAL_SECONDS, TimeUnit.SECONDS);
                 },
                 INITIAL_PERIOD_SECONDS,
                 TimeUnit.SECONDS);

@@ -39,9 +39,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-@SpringBootTest(
-        classes = TestApplication.class,
-        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = TestApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @ContextConfiguration(classes = {ApitallyFilterTest.TestConfig.class})
 class ApitallyFilterTest {
 
@@ -54,19 +52,14 @@ class ApitallyFilterTest {
         public ApitallyClient apitallyClient(ApitallyProperties properties) {
             LogAppender.register();
             ApitallyClient client =
-                    new ApitallyClient(
-                            properties.getClientId(),
-                            properties.getEnv(),
-                            properties.getRequestLogging());
+                    new ApitallyClient(properties.getClientId(), properties.getEnv(), properties.getRequestLogging());
             ApitallySpanCollector.getInstance().setDelegate(client.spanCollector);
             return client;
         }
 
         @Bean
-        public FilterRegistrationBean<ApitallyFilter> filterRegistration(
-                ApitallyClient apitallyClient) {
-            final FilterRegistrationBean<ApitallyFilter> registrationBean =
-                    new FilterRegistrationBean<>();
+        public FilterRegistrationBean<ApitallyFilter> filterRegistration(ApitallyClient apitallyClient) {
+            final FilterRegistrationBean<ApitallyFilter> registrationBean = new FilterRegistrationBean<>();
             registrationBean.setFilter(new ApitallyFilter(apitallyClient));
             registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE - 10);
             return registrationBean;
@@ -78,11 +71,14 @@ class ApitallyFilterTest {
         }
     }
 
-    @Autowired private TestRestTemplate restTemplate;
+    @Autowired
+    private TestRestTemplate restTemplate;
 
-    @Autowired private ApitallyClient apitallyClient;
+    @Autowired
+    private ApitallyClient apitallyClient;
 
-    @Autowired private RequestMappingHandlerMapping requestMappingHandlerMapping;
+    @Autowired
+    private RequestMappingHandlerMapping requestMappingHandlerMapping;
 
     @BeforeEach
     void setUp() {
@@ -117,40 +113,28 @@ class ApitallyFilterTest {
 
         List<Requests> requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(4, requests.size(), "4 requests counted");
-        assertTrue(
-                requests.stream()
-                        .anyMatch(
-                                r ->
-                                        r.getMethod().equals("GET")
-                                                && r.getPath().equals("/items")
-                                                && r.getStatusCode() == 200
-                                                && r.getRequestCount() == 1
-                                                && r.getResponseSizeSum() > 0));
-        assertTrue(
-                requests.stream()
-                        .anyMatch(
-                                r ->
-                                        r.getMethod().equals("GET")
-                                                && r.getPath().equals("/items/{id}")
-                                                && r.getStatusCode() == 200
-                                                && r.getRequestCount() == 2));
-        assertTrue(
-                requests.stream()
-                        .anyMatch(
-                                r ->
-                                        r.getMethod().equals("GET")
-                                                && r.getPath().equals("/items/{id}")
-                                                && r.getStatusCode() == 400
-                                                && r.getRequestCount() == 1));
-        assertTrue(
-                requests.stream()
-                        .anyMatch(
-                                r ->
-                                        r.getMethod().equals("GET")
-                                                && r.getPath().equals("/throw")
-                                                && r.getStatusCode() == 500
-                                                && r.getRequestCount() == 1
-                                                && r.getResponseSizeSum() == 0));
+        assertTrue(requests.stream()
+                .anyMatch(r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items")
+                        && r.getStatusCode() == 200
+                        && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() > 0));
+        assertTrue(requests.stream()
+                .anyMatch(r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items/{id}")
+                        && r.getStatusCode() == 200
+                        && r.getRequestCount() == 2));
+        assertTrue(requests.stream()
+                .anyMatch(r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/items/{id}")
+                        && r.getStatusCode() == 400
+                        && r.getRequestCount() == 1));
+        assertTrue(requests.stream()
+                .anyMatch(r -> r.getMethod().equals("GET")
+                        && r.getPath().equals("/throw")
+                        && r.getStatusCode() == 500
+                        && r.getRequestCount() == 1
+                        && r.getResponseSizeSum() == 0));
 
         requests = apitallyClient.requestCounter.getAndResetRequests();
         assertEquals(0, requests.size(), "No requests counted after reset");
@@ -174,36 +158,26 @@ class ApitallyFilterTest {
 
         delay(100);
 
-        List<ValidationErrors> validationErrors =
-                apitallyClient.validationErrorCounter.getAndResetValidationErrors();
+        List<ValidationErrors> validationErrors = apitallyClient.validationErrorCounter.getAndResetValidationErrors();
         assertEquals(3, validationErrors.size());
-        assertTrue(
-                validationErrors.stream()
-                        .anyMatch(
-                                e ->
-                                        e.getMethod().equals("POST")
-                                                && e.getPath().equals("/items")
-                                                && e.getLoc().equals("testItem.name")
-                                                && e.getType().equals("Size")
-                                                && e.getErrorCount() == 1));
-        assertTrue(
-                validationErrors.stream()
-                        .anyMatch(
-                                e ->
-                                        e.getMethod().equals("GET")
-                                                && e.getPath().equals("/items")
-                                                && e.getLoc().equals("getItems.name")
-                                                && e.getType().equals("Size")
-                                                && e.getErrorCount() == 1));
-        assertTrue(
-                validationErrors.stream()
-                        .anyMatch(
-                                e ->
-                                        e.getMethod().equals("GET")
-                                                && e.getPath().equals("/items/{id}")
-                                                && e.getLoc().equals("getItem.id")
-                                                && e.getType().equals("Min")
-                                                && e.getErrorCount() == 1));
+        assertTrue(validationErrors.stream()
+                .anyMatch(e -> e.getMethod().equals("POST")
+                        && e.getPath().equals("/items")
+                        && e.getLoc().equals("testItem.name")
+                        && e.getType().equals("Size")
+                        && e.getErrorCount() == 1));
+        assertTrue(validationErrors.stream()
+                .anyMatch(e -> e.getMethod().equals("GET")
+                        && e.getPath().equals("/items")
+                        && e.getLoc().equals("getItems.name")
+                        && e.getType().equals("Size")
+                        && e.getErrorCount() == 1));
+        assertTrue(validationErrors.stream()
+                .anyMatch(e -> e.getMethod().equals("GET")
+                        && e.getPath().equals("/items/{id}")
+                        && e.getLoc().equals("getItem.id")
+                        && e.getType().equals("Min")
+                        && e.getErrorCount() == 1));
 
         validationErrors = apitallyClient.validationErrorCounter.getAndResetValidationErrors();
         assertEquals(0, validationErrors.size());
@@ -216,17 +190,13 @@ class ApitallyFilterTest {
 
         delay(100);
 
-        List<ServerErrors> serverErrors =
-                apitallyClient.serverErrorCounter.getAndResetServerErrors();
+        List<ServerErrors> serverErrors = apitallyClient.serverErrorCounter.getAndResetServerErrors();
         assertEquals(1, serverErrors.size());
-        assertTrue(
-                serverErrors.stream()
-                        .anyMatch(
-                                e ->
-                                        e.getType().equals("TestException")
-                                                && e.getMessage().equals("test")
-                                                && e.getStackTraceString().length() > 100
-                                                && e.getErrorCount() == 1));
+        assertTrue(serverErrors.stream()
+                .anyMatch(e -> e.getType().equals("TestException")
+                        && e.getMessage().equals("test")
+                        && e.getStackTraceString().length() > 100
+                        && e.getErrorCount() == 1));
 
         serverErrors = apitallyClient.serverErrorCounter.getAndResetServerErrors();
         assertEquals(0, serverErrors.size());
@@ -254,32 +224,16 @@ class ApitallyFilterTest {
     void testGetPaths() {
         List<Path> paths = ApitallyUtils.getPaths(requestMappingHandlerMapping);
         assertEquals(6, paths.size());
-        assertTrue(
-                paths.stream()
-                        .anyMatch(
-                                p -> p.getMethod().equals("GET") && p.getPath().equals("/items")));
-        assertTrue(
-                paths.stream()
-                        .anyMatch(
-                                p ->
-                                        p.getMethod().equals("GET")
-                                                && p.getPath().equals("/items/{id}")));
-        assertTrue(
-                paths.stream()
-                        .anyMatch(
-                                p -> p.getMethod().equals("POST") && p.getPath().equals("/items")));
-        assertTrue(
-                paths.stream()
-                        .anyMatch(
-                                p ->
-                                        p.getMethod().equals("PUT")
-                                                && p.getPath().equals("/items/{id}")));
-        assertTrue(
-                paths.stream()
-                        .anyMatch(
-                                p ->
-                                        p.getMethod().equals("DELETE")
-                                                && p.getPath().equals("/items/{id}")));
+        assertTrue(paths.stream()
+                .anyMatch(p -> p.getMethod().equals("GET") && p.getPath().equals("/items")));
+        assertTrue(paths.stream()
+                .anyMatch(p -> p.getMethod().equals("GET") && p.getPath().equals("/items/{id}")));
+        assertTrue(paths.stream()
+                .anyMatch(p -> p.getMethod().equals("POST") && p.getPath().equals("/items")));
+        assertTrue(paths.stream()
+                .anyMatch(p -> p.getMethod().equals("PUT") && p.getPath().equals("/items/{id}")));
+        assertTrue(paths.stream()
+                .anyMatch(p -> p.getMethod().equals("DELETE") && p.getPath().equals("/items/{id}")));
     }
 
     @Test
@@ -317,9 +271,8 @@ class ApitallyFilterTest {
         assertEquals("GET", firstItem.get("request").get("method").asText());
         assertTrue(firstItem.get("request").get("url").asText().contains("/items"));
         assertEquals(200, firstItem.get("response").get("statusCode").asInt());
-        String responseBody =
-                new String(
-                        Base64.getDecoder().decode(firstItem.get("response").get("body").asText()));
+        String responseBody = new String(
+                Base64.getDecoder().decode(firstItem.get("response").get("body").asText()));
         assertTrue(responseBody.contains("alice"));
 
         // Verify application logs were captured
@@ -332,17 +285,15 @@ class ApitallyFilterTest {
         assertTrue(firstItem.has("spans"));
         assertTrue(firstItem.get("spans").isArray());
         assertTrue(firstItem.get("spans").size() >= 2); // root span + child span
-        assertTrue(
-                StreamSupport.stream(firstItem.get("spans").spliterator(), false)
-                        .anyMatch(span -> span.get("name").asText().equals("fetchItems")));
+        assertTrue(StreamSupport.stream(firstItem.get("spans").spliterator(), false)
+                .anyMatch(span -> span.get("name").asText().equals("fetchItems")));
 
         // Verify POST request logging with request body
         JsonNode secondItem = items[1];
         assertEquals("POST", secondItem.get("request").get("method").asText());
         assertTrue(secondItem.get("request").get("url").asText().contains("/items"));
-        String requestBody =
-                new String(
-                        Base64.getDecoder().decode(secondItem.get("request").get("body").asText()));
+        String requestBody = new String(
+                Base64.getDecoder().decode(secondItem.get("request").get("body").asText()));
         assertTrue(requestBody.contains("bob"));
     }
 

@@ -92,16 +92,17 @@ class SpanCollectorTest {
         assertTrue(spanNames.contains("child1"));
         assertTrue(spanNames.contains("child2"));
 
-        SpanData rootSpan =
-                spans.stream()
-                        .filter(s -> s.getName().equals("TestController.getTest"))
-                        .findFirst()
-                        .orElse(null);
+        SpanData rootSpan = spans.stream()
+                .filter(s -> s.getName().equals("TestController.getTest"))
+                .findFirst()
+                .orElse(null);
         assertNotNull(rootSpan);
         assertNull(rootSpan.getParentSpanId());
 
-        SpanData childSpan =
-                spans.stream().filter(s -> s.getName().equals("child1")).findFirst().orElse(null);
+        SpanData childSpan = spans.stream()
+                .filter(s -> s.getName().equals("child1"))
+                .findFirst()
+                .orElse(null);
         assertNotNull(childSpan);
         assertEquals(rootSpan.getSpanId(), childSpan.getParentSpanId());
     }
@@ -144,8 +145,10 @@ class SpanCollectorTest {
         List<SpanData> spans = handle.end();
         assertNotNull(spans);
 
-        SpanData testSpan =
-                spans.stream().filter(s -> s.getName().equals("testSpan")).findFirst().orElse(null);
+        SpanData testSpan = spans.stream()
+                .filter(s -> s.getName().equals("testSpan"))
+                .findFirst()
+                .orElse(null);
         assertNotNull(testSpan);
         assertEquals(16, testSpan.getSpanId().length());
         assertEquals("INTERNAL", testSpan.getKind());

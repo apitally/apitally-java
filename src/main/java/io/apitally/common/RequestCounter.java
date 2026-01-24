@@ -31,8 +31,7 @@ public class RequestCounter {
             long responseTime,
             long requestSize,
             long responseSize) {
-        String key =
-                String.join("|", consumer, method.toUpperCase(), path, String.valueOf(statusCode));
+        String key = String.join("|", consumer, method.toUpperCase(), path, String.valueOf(statusCode));
 
         // Increment request count
         requestCounts.merge(key, 1, Integer::sum);
@@ -73,25 +72,21 @@ public class RequestCounter {
             String path = parts[2];
             int statusCode = Integer.parseInt(parts[3]);
 
-            Map<Integer, Integer> responseTimeMap =
-                    responseTimes.getOrDefault(key, new ConcurrentHashMap<>());
-            Map<Integer, Integer> requestSizeMap =
-                    requestSizes.getOrDefault(key, new ConcurrentHashMap<>());
-            Map<Integer, Integer> responseSizeMap =
-                    responseSizes.getOrDefault(key, new ConcurrentHashMap<>());
+            Map<Integer, Integer> responseTimeMap = responseTimes.getOrDefault(key, new ConcurrentHashMap<>());
+            Map<Integer, Integer> requestSizeMap = requestSizes.getOrDefault(key, new ConcurrentHashMap<>());
+            Map<Integer, Integer> responseSizeMap = responseSizes.getOrDefault(key, new ConcurrentHashMap<>());
 
-            Requests item =
-                    new Requests(
-                            consumer,
-                            method,
-                            path,
-                            statusCode,
-                            entry.getValue(),
-                            requestSizeSums.getOrDefault(key, 0L),
-                            responseSizeSums.getOrDefault(key, 0L),
-                            responseTimeMap,
-                            requestSizeMap,
-                            responseSizeMap);
+            Requests item = new Requests(
+                    consumer,
+                    method,
+                    path,
+                    statusCode,
+                    entry.getValue(),
+                    requestSizeSums.getOrDefault(key, 0L),
+                    responseSizeSums.getOrDefault(key, 0L),
+                    responseTimeMap,
+                    requestSizeMap,
+                    responseSizeMap);
             data.add(item);
         }
 

@@ -17,13 +17,9 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandl
 public class ApitallyAutoConfiguration {
     @Bean
     public ApitallyClient apitallyClient(
-            ApitallyProperties properties,
-            RequestMappingHandlerMapping requestMappingHandlerMapping) {
+            ApitallyProperties properties, RequestMappingHandlerMapping requestMappingHandlerMapping) {
         ApitallyClient client =
-                new ApitallyClient(
-                        properties.getClientId(),
-                        properties.getEnv(),
-                        properties.getRequestLogging());
+                new ApitallyClient(properties.getClientId(), properties.getEnv(), properties.getRequestLogging());
         List<Path> paths = ApitallyUtils.getPaths(requestMappingHandlerMapping);
         Map<String, String> versions = ApitallyUtils.getVersions();
         client.setStartupData(paths, versions, "java:spring");
@@ -42,10 +38,8 @@ public class ApitallyAutoConfiguration {
     }
 
     @Bean
-    public FilterRegistrationBean<ApitallyFilter> apitallyFilterRegistration(
-            ApitallyClient apitallyClient) {
-        final FilterRegistrationBean<ApitallyFilter> registrationBean =
-                new FilterRegistrationBean<>();
+    public FilterRegistrationBean<ApitallyFilter> apitallyFilterRegistration(ApitallyClient apitallyClient) {
+        final FilterRegistrationBean<ApitallyFilter> registrationBean = new FilterRegistrationBean<>();
         registrationBean.setFilter(new ApitallyFilter(apitallyClient));
         registrationBean.setOrder(Ordered.LOWEST_PRECEDENCE - 10);
         return registrationBean;

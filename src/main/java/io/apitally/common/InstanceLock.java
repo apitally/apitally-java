@@ -55,12 +55,8 @@ public class InstanceLock implements Closeable {
             Path lockPath = lockDir.resolve("instance_" + appEnvHash + "_" + slot + ".lock");
             FileChannel channel = null;
             try {
-                channel =
-                        FileChannel.open(
-                                lockPath,
-                                StandardOpenOption.CREATE,
-                                StandardOpenOption.READ,
-                                StandardOpenOption.WRITE);
+                channel = FileChannel.open(
+                        lockPath, StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
 
                 FileLock lock = channel.tryLock();
                 if (lock == null) {
@@ -69,9 +65,9 @@ public class InstanceLock implements Closeable {
                 }
 
                 FileTime lastModified = Files.getLastModifiedTime(lockPath);
-                boolean tooOld =
-                        Duration.between(lastModified.toInstant(), Instant.now()).getSeconds()
-                                > MAX_LOCK_AGE_SECONDS;
+                boolean tooOld = Duration.between(lastModified.toInstant(), Instant.now())
+                                .getSeconds()
+                        > MAX_LOCK_AGE_SECONDS;
 
                 String existingUuid = readChannel(channel);
                 UUID uuid = parseUuid(existingUuid);
@@ -120,8 +116,7 @@ public class InstanceLock implements Closeable {
         }
     }
 
-    private static String getAppEnvHash(String clientId, String env)
-            throws NoSuchAlgorithmException {
+    private static String getAppEnvHash(String clientId, String env) throws NoSuchAlgorithmException {
         MessageDigest digest = MessageDigest.getInstance("SHA-256");
         byte[] hash = digest.digest((clientId + ":" + env).getBytes(StandardCharsets.UTF_8));
         return HexFormat.of().formatHex(hash, 0, 4);
