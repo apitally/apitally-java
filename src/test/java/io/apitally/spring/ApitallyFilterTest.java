@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.apitally.common.LogAppender;
 import io.apitally.common.ApitallyClient;
+import io.apitally.common.LogAppender;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.TempGzipFile;
 import io.apitally.common.dto.Consumer;

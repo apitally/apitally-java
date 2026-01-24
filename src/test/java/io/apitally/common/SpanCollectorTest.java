@@ -146,10 +146,7 @@ class SpanCollectorTest {
         assertNotNull(spans);
 
         SpanData testSpan =
-                spans.stream()
-                        .filter(s -> s.getName().equals("testSpan"))
-                        .findFirst()
-                        .orElse(null);
+                spans.stream().filter(s -> s.getName().equals("testSpan")).findFirst().orElse(null);
         assertNotNull(testSpan);
         assertEquals(16, testSpan.getSpanId().length());
         assertEquals("INTERNAL", testSpan.getKind());

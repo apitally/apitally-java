@@ -1,8 +1,8 @@
 package io.apitally.spring;
 
-import io.apitally.common.LogAppender;
 import io.apitally.common.ApitallyClient;
 import io.apitally.common.ConsumerRegistry;
+import io.apitally.common.LogAppender;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.SpanCollector;
 import io.apitally.common.dto.Consumer;

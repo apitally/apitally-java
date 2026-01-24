@@ -32,10 +32,8 @@ public class ApitallySpanCollector implements SpanProcessor {
 
     private void initializeTracer(SpanCollector spanCollector) {
         try {
-            SdkTracerProvider provider =
-                    SdkTracerProvider.builder().addSpanProcessor(this).build();
-            OpenTelemetrySdk sdk =
-                    OpenTelemetrySdk.builder().setTracerProvider(provider).build();
+            SdkTracerProvider provider = SdkTracerProvider.builder().addSpanProcessor(this).build();
+            OpenTelemetrySdk sdk = OpenTelemetrySdk.builder().setTracerProvider(provider).build();
             Tracer tracer;
             try {
                 GlobalOpenTelemetry.set(sdk);
