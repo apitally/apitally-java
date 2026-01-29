@@ -72,7 +72,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
         final boolean shouldCaptureLogs = requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
-        final boolean shouldCaptureSpans = requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();

@@ -35,7 +35,6 @@ public class RequestLoggerTest {
         requestLoggingConfig.setResponseHeadersIncluded(true);
         requestLoggingConfig.setResponseBodyIncluded(true);
         requestLoggingConfig.setLogCaptureEnabled(true);
-        requestLoggingConfig.setTracingEnabled(true);
         requestLogger = new RequestLogger(requestLoggingConfig);
     }
 
