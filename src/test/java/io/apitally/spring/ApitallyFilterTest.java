@@ -248,7 +248,6 @@ class ApitallyFilterTest {
         apitallyClient.requestLogger.getConfig().setRequestBodyIncluded(true);
         apitallyClient.requestLogger.getConfig().setResponseBodyIncluded(true);
         apitallyClient.requestLogger.getConfig().setLogCaptureEnabled(true);
-        apitallyClient.requestLogger.getConfig().setTracingEnabled(true);
         apitallyClient.requestLogger.clear();
 
         ResponseEntity<String> response = restTemplate.getForEntity("/items", String.class);
