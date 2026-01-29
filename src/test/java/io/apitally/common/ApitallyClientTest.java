@@ -60,7 +60,7 @@ class ApitallyClientTest {
                 0L,
                 new byte[0]);
         Response response = new Response(200, 0.123, responseHeaders, 13L, "{\"items\": []}".getBytes());
-        client.requestLogger.logRequest(request, response, null, null, null, null);
+        client.requestLogger.logRequest(request, response, null, null);
         client.requestLogger.maintain();
 
         List<Path> paths = Arrays.asList(new Path("GET", "/items"));

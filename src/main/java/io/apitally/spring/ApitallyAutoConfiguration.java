@@ -29,10 +29,6 @@ public class ApitallyAutoConfiguration {
                 && properties.getRequestLogging().isLogCaptureEnabled()) {
             LogAppender.register();
         }
-        if (properties.getRequestLogging().isEnabled()
-                && properties.getRequestLogging().isTracingEnabled()) {
-            ApitallySpanCollector.getInstance().setDelegate(client.spanCollector);
-        }
 
         return client;
     }

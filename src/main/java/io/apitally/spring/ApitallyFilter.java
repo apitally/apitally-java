@@ -5,7 +5,6 @@ import io.apitally.common.ConsumerRegistry;
 import io.apitally.common.LogAppender;
 import io.apitally.common.RequestLogger;
 import io.apitally.common.RequestLoggingConfig;
-import io.apitally.common.SpanCollector;
 import io.apitally.common.dto.Consumer;
 import io.apitally.common.dto.Header;
 import io.apitally.common.dto.LogRecord;
@@ -73,7 +72,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
                 cachingResponse == null ? new CountingResponseWrapper(response) : null;
 
         final boolean shouldCaptureLogs = requestLoggingEnabled && requestLoggingConfig.isLogCaptureEnabled();
-        final boolean shouldCaptureSpans = requestLoggingEnabled && requestLoggingConfig.isTracingEnabled();
 
         Exception exception = null;
         final long startTime = System.currentTimeMillis();
@@ -81,8 +79,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
         if (shouldCaptureLogs) {
             LogAppender.startCapture();
         }
-
-        final SpanCollector.SpanHandle spanHandle = shouldCaptureSpans ? client.spanCollector.startCollection() : null;
 
         try {
             filterChain.doFilter(
@@ -95,20 +91,6 @@ public class ApitallyFilter extends OncePerRequestFilter {
             try {
                 final long responseTimeInMillis = System.currentTimeMillis() - startTime;
                 final String path = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-
-                // End span collection and get spans
-                List<SpanData> spans = null;
-                String traceId = null;
-                if (spanHandle != null) {
-                    Object handler = request.getAttribute(HandlerMapping.BEST_MATCHING_HANDLER_ATTRIBUTE);
-                    if (handler instanceof HandlerMethod handlerMethod) {
-                        String controllerName = handlerMethod.getBeanType().getSimpleName();
-                        String methodName = handlerMethod.getMethod().getName();
-                        spanHandle.setName(controllerName + "." + methodName);
-                    }
-                    spans = spanHandle.end();
-                    traceId = spanHandle.getTraceId();
-                }
 
                 // End log capture and get logs
                 final List<LogRecord> capturedLogs = shouldCaptureLogs ? LogAppender.endCapture() : null;
@@ -180,9 +162,7 @@ public class ApitallyFilter extends OncePerRequestFilter {
                                     responseSize,
                                     responseBody),
                             exception,
-                            capturedLogs,
-                            spans,
-                            traceId);
+                            capturedLogs);
                 }
 
                 // Add validation error to counter
