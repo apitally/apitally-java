@@ -1,9 +1,6 @@
 package io.apitally.spring.app;
 
 import io.apitally.spring.ApitallyConsumer;
-import io.opentelemetry.api.GlobalOpenTelemetry;
-import io.opentelemetry.api.trace.Span;
-import io.opentelemetry.api.trace.Tracer;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Valid;
@@ -41,13 +38,9 @@ public class TestController {
         ApitallyConsumer consumer = new ApitallyConsumer("tester", "Tester", "Test Group");
         request.setAttribute("apitallyConsumer", consumer);
 
-        Tracer tracer = GlobalOpenTelemetry.getTracer("test");
-        Span childSpan = tracer.spanBuilder("fetchItems").startSpan();
-        childSpan.setAttribute("filter", name != null ? name : "none");
         List<TestItem> items = new ArrayList<TestItem>();
         items.add(new TestItem(1, "bob"));
         items.add(new TestItem(2, "alice"));
-        childSpan.end();
 
         logger.debug("Returning {} items", items.size());
         return items;

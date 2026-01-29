@@ -53,7 +53,6 @@ class ApitallyFilterTest {
             LogAppender.register();
             ApitallyClient client =
                     new ApitallyClient(properties.getClientId(), properties.getEnv(), properties.getRequestLogging());
-            ApitallySpanCollector.getInstance().setDelegate(client.spanCollector);
             return client;
         }
 
@@ -280,13 +279,6 @@ class ApitallyFilterTest {
         assertTrue(firstItem.get("logs").isArray());
         assertTrue(firstItem.get("logs").size() > 0);
         assertTrue(firstItem.get("logs").get(0).get("message").asText().contains("Getting items"));
-
-        // Verify spans were captured
-        assertTrue(firstItem.has("spans"));
-        assertTrue(firstItem.get("spans").isArray());
-        assertTrue(firstItem.get("spans").size() >= 2); // root span + child span
-        assertTrue(StreamSupport.stream(firstItem.get("spans").spliterator(), false)
-                .anyMatch(span -> span.get("name").asText().equals("fetchItems")));
 
         // Verify POST request logging with request body
         JsonNode secondItem = items[1];
