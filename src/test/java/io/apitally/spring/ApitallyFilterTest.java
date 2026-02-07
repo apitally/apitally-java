@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.StreamSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;

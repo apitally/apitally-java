@@ -11,7 +11,6 @@ import io.apitally.common.dto.Header;
 import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.Response;
-import io.apitally.common.dto.SpanData;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;

@@ -11,11 +11,7 @@ public class RequestLogItem extends BaseDto {
     private final ExceptionDto exception;
     private final List<LogRecord> logs;
 
-    public RequestLogItem(
-            Request request,
-            Response response,
-            ExceptionDto exception,
-            List<LogRecord> logs) {
+    public RequestLogItem(Request request, Response response, ExceptionDto exception, List<LogRecord> logs) {
         this.uuid = UUID.randomUUID().toString();
         this.request = request;
         this.response = response;

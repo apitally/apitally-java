@@ -9,7 +9,6 @@ import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.RequestLogItem;
 import io.apitally.common.dto.Response;
-import io.apitally.common.dto.SpanData;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -127,11 +126,7 @@ public class RequestLogger {
         this.suspendUntil = timestamp;
     }
 
-    public void logRequest(
-            Request request,
-            Response response,
-            Exception exception,
-            List<LogRecord> logs) {
+    public void logRequest(Request request, Response response, Exception exception, List<LogRecord> logs) {
         if (!enabled || suspendUntil != null && suspendUntil > System.currentTimeMillis()) {
             return;
         }
