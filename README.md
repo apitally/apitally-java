@@ -91,14 +91,13 @@ apitally:
   client-id: "your-client-id"
   env: "dev" # or "prod" etc.
 
-  # Optional: configure request logging and tracing
+  # Optional: configure request logging
   request-logging:
     enabled: true
     request-headers-included: true
     request-body-included: true
     response-body-included: true
     log-capture-enabled: true
-    tracing-enabled: true
 ```
 
 For further instructions, see our

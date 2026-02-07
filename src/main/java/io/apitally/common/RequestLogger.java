@@ -9,7 +9,6 @@ import io.apitally.common.dto.LogRecord;
 import io.apitally.common.dto.Request;
 import io.apitally.common.dto.RequestLogItem;
 import io.apitally.common.dto.Response;
-import io.apitally.common.dto.SpanData;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -127,13 +126,7 @@ public class RequestLogger {
         this.suspendUntil = timestamp;
     }
 
-    public void logRequest(
-            Request request,
-            Response response,
-            Exception exception,
-            List<LogRecord> logs,
-            List<SpanData> spans,
-            String traceId) {
+    public void logRequest(Request request, Response response, Exception exception, List<LogRecord> logs) {
         if (!enabled || suspendUntil != null && suspendUntil > System.currentTimeMillis()) {
             return;
         }
@@ -171,12 +164,7 @@ public class RequestLogger {
                 logs = null;
             }
 
-            if (!config.isTracingEnabled()) {
-                spans = null;
-                traceId = null;
-            }
-
-            RequestLogItem item = new RequestLogItem(request, response, exceptionDto, logs, spans, traceId);
+            RequestLogItem item = new RequestLogItem(request, response, exceptionDto, logs);
             pendingWrites.add(item);
 
             if (pendingWrites.size() > MAX_PENDING_WRITES) {
@@ -283,12 +271,6 @@ public class RequestLogger {
                 }
                 if (item.getLogs() != null && !item.getLogs().isEmpty()) {
                     itemNode.set("logs", objectMapper.valueToTree(item.getLogs()));
-                }
-                if (item.getSpans() != null && !item.getSpans().isEmpty()) {
-                    itemNode.set("spans", objectMapper.valueToTree(item.getSpans()));
-                }
-                if (item.getTraceId() != null && !item.getTraceId().isEmpty()) {
-                    itemNode.put("trace_id", item.getTraceId());
                 }
 
                 String serializedItem = objectMapper.writeValueAsString(itemNode);
